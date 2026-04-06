@@ -1,0 +1,74 @@
+# ============================================
+# SimplificaÊ — .gitignore
+# ============================================
+
+# Dados sensíveis
+.env
+*.env.local
+.oauth_token.json
+email_config.json
+email_history.json
+email_destinatarios.json
+
+# Dados de clientes (uploads e outputs)
+uploads/
+output/
+skills/
+
+# Cache
+*_records_cache.json
+*.tmp
+__pycache__/
+*.pyc
+*.pyo
+
+# Backups automáticos
+backups/
+
+# Scripts internos de debug/patch (centenas de arquivos _*.py)
+_*.py
+_bench*.py
+_check*.py
+_debug*.py
+_diag*.py
+_find*.py
+_fix*.py
+_patch*.py
+_read*.py
+_test*.py
+_add*.py
+_clean*.py
+_map*.py
+_remove*.py
+_insert*.py
+_restore*.py
+
+# Distribuição compilada
+dist/
+build/
+*.spec
+*.egg-info/
+_restore_v22/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+
+# Logs
+*.log
+webapp_*.log
+
+# Arquivos de teste
+*.xlsx
+*.csv
+*.zip
+!raizes_conhecidas.json
+
+# Git
+.git/
