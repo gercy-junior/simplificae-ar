@@ -3622,7 +3622,7 @@ def get_token_via_cli():
 
 
 
-def fetch_empresa_names(raizes):
+def fetch_empresa_names(raizes, cnpjs_por_raiz=None):
 
 
 
@@ -3894,11 +3894,11 @@ ORDER BY root_cnpj"""
 
 
 
-    return _fetch_empresa_names_web(raizes)
+    return _fetch_empresa_names_web(raizes, cnpjs_por_raiz)
 
 
 
-def _fetch_empresa_names_web(raizes):
+def _fetch_empresa_names_web(raizes, cnpjs_por_raiz=None):
 
 
 
@@ -3946,7 +3946,11 @@ def _fetch_empresa_names_web(raizes):
 
 
 
-        candidates = [raiz + "0001" + "00", raiz + "000100", raiz + "000101"]
+        # Preferir CNPJs reais, depois construidos
+        _cmap = cnpjs_por_raiz or {}
+        candidates = list(_cmap.get(raiz, []))[:3]
+        if not candidates:
+            candidates = [raiz + "0001" + "00", raiz + "000100", raiz + "000101"]
 
 
 
@@ -3974,7 +3978,7 @@ def _fetch_empresa_names_web(raizes):
 
 
 
-                    timeout=8
+                    timeout=8, verify=False
 
 
 
@@ -5620,7 +5624,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <input type="number" id="di-periodo" step="0.001" value="14.9" placeholder="14.9">
+                    <input type="number" id="di-periodo" step="0.001" value="14.65" placeholder="14.65">
 
 
 
@@ -7003,6 +7007,21 @@ HTML_TEMPLATE = '''
 
             card.appendChild(hdrEl);
 
+            // Seletor de perfil para envio em massa
+            var saPerfilWrap = document.createElement('div');
+            saPerfilWrap.style.cssText = 'margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #F0F0F0;';
+            var saPerfilLbl = document.createElement('label');
+            saPerfilLbl.style.cssText = 'font-size:13px;font-weight:600;display:block;margin-bottom:5px;';
+            saPerfilLbl.textContent = 'Perfil do cliente (para todos)';
+            var saPerfilSel = document.createElement('select');
+            saPerfilSel.id = 'sendall-perfil-select';
+            saPerfilSel.style.cssText = 'width:100%;padding:7px 10px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;background:white;';
+            saPerfilSel.innerHTML = '<option value="recorrente">↻ Recorrente — Agenda disponível</option>'
+                + '<option value="novo">★ Novo cliente — Apresentação PicPay AR</option>'
+                + '<option value="taxa_zero">≈ Taxa zerada — Simulação sem compromisso</option>';
+            saPerfilWrap.appendChild(saPerfilLbl); saPerfilWrap.appendChild(saPerfilSel);
+            card.appendChild(saPerfilWrap);
+
             card.appendChild(tblDiv);
 
             card.appendChild(btnsDiv);
@@ -7090,7 +7109,7 @@ HTML_TEMPLATE = '''
                     body: JSON.stringify({session_id: e.sid, empresa: e.nome, safe_name: e.safe,
 
                         to_email: toEmail, to_emails: toEmails, urs: e.urs, valor_total: e.valor, valor_operavel: e.operavel,
-                        taxa_pct: e.taxa || 0})
+                        taxa_pct: e.taxa || 0, perfil_cliente: (document.getElementById('sendall-perfil-select')||{value:'recorrente'}).value})
 
                 })
 
@@ -7220,7 +7239,8 @@ HTML_TEMPLATE = '''
 
                 msgTa.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;resize:vertical;';
 
-                msgTa.value = 'Conforme a sua solicita\u00e7\u00e3o, segue em anexo a cota\u00e7\u00e3o atualizada da sua agenda de antecipa\u00e7\u00e3o de receb\u00edveis.';
+                msgTa.value = window._lastCustomMsg || 'Conforme a sua solicita\u00e7\u00e3o, segue em anexo a cota\u00e7\u00e3o atualizada da sua agenda de antecipa\u00e7\u00e3o de receb\u00edveis.';
+                msgTa.addEventListener('input', function(){ window._lastCustomMsg = msgTa.value; });
 
                 msgWrap.appendChild(msgLbl); msgWrap.appendChild(msgTa);
 
@@ -10801,6 +10821,20 @@ html += '</td></tr>';
 
                 card.appendChild(fldWrap);
 
+                // Campo mensagem personalizada
+                var msgWrap = document.createElement('div');
+                msgWrap.style.marginBottom = '12px';
+                var msgLbl = document.createElement('label');
+                msgLbl.style.cssText = 'font-size:13px;font-weight:600;display:block;margin-bottom:4px;';
+                msgLbl.textContent = 'Mensagem personalizada (opcional)';
+                var msgTa = document.createElement('textarea');
+                msgTa.id = 'emailMsg'; msgTa.rows = 3;
+                msgTa.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;resize:vertical;';
+                msgTa.placeholder = 'Deixe em branco para usar o texto padrão. Exemplo: Conforme solicitado, segue cotação atualizada.';
+                msgTa.value = window._lastEmailMsg || '';
+                msgTa.addEventListener('input', function(){ window._lastEmailMsg = msgTa.value; });
+                msgWrap.appendChild(msgLbl); msgWrap.appendChild(msgTa);
+                card.appendChild(msgWrap);
                 card.appendChild(preview);
 
                 card.appendChild(statusDiv);
@@ -10847,7 +10881,7 @@ html += '</td></tr>';
 
                 body: JSON.stringify({session_id:sid, empresa:empresa, safe_name:safe,
 
-                    to_email:toEmail, to_emails:toEmails, urs:urs, valor_total:valorTotal, valor_operavel:valorOp, taxa_pct:taxaPct||0, operator_email:getOperatorEmail(), perfil_cliente:(document.getElementById('email-perfil-select')||{value:'recorrente'}).value})
+                    to_email:toEmail, to_emails:toEmails, urs:urs, valor_total:valorTotal, valor_operavel:valorOp, taxa_pct:taxaPct||0, operator_email:getOperatorEmail(), custom_message:(document.getElementById('emailMsg')||{value:''}).value||'', perfil_cliente:(document.getElementById('email-perfil-select')||{value:'recorrente'}).value})
 
             })
 
@@ -11311,7 +11345,14 @@ def upload():
 
 
 
-        sf_names = fetch_empresa_names(unknown_raiz_set)
+        # Montar mapa de CNPJs reais por raiz para busca mais precisa
+        _cnpjs_pr = {}
+        for _r2 in records:
+            _raiz2 = _r2.get('raiz', '')
+            _cnpj2 = _r2.get('cnpj', '')
+            if _raiz2 in unknown_raiz_set and _cnpj2:
+                _cnpjs_pr.setdefault(_raiz2, []).append(_cnpj2)
+        sf_names = fetch_empresa_names(unknown_raiz_set, _cnpjs_pr)
 
 
 
@@ -11523,7 +11564,7 @@ def generate():
 
 
 
-    di_periodo = data.get('di_periodo', 0.149)
+    di_periodo = data.get('di_periodo', 0.1465)
 
 
 
@@ -11927,7 +11968,7 @@ def fetch_sellers_route():
 
 
 
-    di_periodo = data.get('di_periodo', 0.149)
+    di_periodo = data.get('di_periodo', 0.1465)
 
 
 
@@ -13090,7 +13131,7 @@ def fetch_sellers_route():
                                          ineligible_cnpjs=set(_inelig),
                                          missing_cnpjs=set(_miss))
                     except Exception as _e:
-                        import logging as _lg; _lg.error(f'COMPLETO {_nome}: {_e}')
+                        import logging as _lg, traceback as _tb; _lg.error(f'COMPLETO {_nome}: {_e}\n{_tb.format_exc()}')
 
                 import threading as _thr
                 _thr.Thread(target=_gen_completo, daemon=True).start()
@@ -14391,7 +14432,7 @@ def generate_custom():
 
 
 
-    di_periodo = data.get('di_periodo', 0.149)
+    di_periodo = data.get('di_periodo', 0.1465)
 
 
 
@@ -16912,8 +16953,9 @@ if __name__ == '__main__':
 
 
 
+if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
 
 
 
