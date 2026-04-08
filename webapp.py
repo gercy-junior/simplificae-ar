@@ -3560,85 +3560,62 @@ def get_token_via_cli():
 
 
 
-    """Tenta obter token OAuth via Databricks CLI."""
-
-
+    """Tenta obter token OAuth via Databricks CLI.
+    Busca o CLI em múltiplos locais e tenta todos os profiles configurados.
+    """
 
     import subprocess
+    import shutil as _shutil
+    import configparser as _cp
 
-
-
-    cli_paths = [
-
-
-
-        os.path.join(os.environ.get('LOCALAPPDATA', ''), 
-
-
-
-            'Microsoft', 'WinGet', 'Packages',
-
-
-
-            'Databricks.DatabricksCLI_Microsoft.Winget.Source_8wekyb3d8bbwe', 'databricks.exe'),
-
-
-
+    # --- Encontrar o CLI ---
+    cli_candidates = []
+    _local = os.environ.get('LOCALAPPDATA', '')
+    _winget = os.path.join(_local, 'Microsoft', 'WinGet', 'Packages')
+    if os.path.exists(_winget):
+        for _folder in os.listdir(_winget):
+            if 'databricks' in _folder.lower():
+                _c = os.path.join(_winget, _folder, 'databricks.exe')
+                if os.path.exists(_c):
+                    cli_candidates.append(_c)
+    _in_path = _shutil.which('databricks')
+    if _in_path:
+        cli_candidates.append(_in_path)
+    cli_candidates += [
+        os.path.join(_local, 'Programs', 'databricks', 'databricks.exe'),
         'databricks',
-
-
-
-        'databricks.exe'
-
-
-
+        'databricks.exe',
     ]
 
-
-
-    for cli in cli_paths:
-
-
-
+    # --- Ler profiles do .databrickscfg ---
+    _cfg_path = os.path.join(os.environ.get('USERPROFILE', ''), '.databrickscfg')
+    _profiles = [None]  # None = sem --profile (usa DEFAULT)
+    if os.path.exists(_cfg_path):
         try:
-
-
-
-            result = subprocess.run(
-
-
-
-                [cli, 'auth', 'token', '--host', DATABRICKS_HOST],
-
-
-
-                capture_output=True, text=True, timeout=15
-
-
-
-            )
-
-
-
-            if result.returncode == 0:
-
-
-
-                data = json.loads(result.stdout)
-
-
-
-                return data.get('access_token')
-
-
-
+            _cfg = _cp.ConfigParser()
+            _cfg.read(_cfg_path, encoding='utf-8')
+            for _s in _cfg.sections():
+                _host = _cfg.get(_s, 'host', fallback='')
+                if 'picpay' in _host or 'databricks' in _host:
+                    _profiles.insert(0, _s)  # profiles PicPay têm prioridade
         except Exception:
+            pass
 
-
-
-            continue
-
-
+    # --- Tentar cada CLI × cada profile ---
+    for cli in cli_candidates:
+        for profile in _profiles:
+            try:
+                cmd = [cli, 'auth', 'token', '--host', DATABRICKS_HOST]
+                if profile:
+                    cmd += ['--profile', profile]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+                if result.returncode == 0:
+                    data = json.loads(result.stdout)
+                    token = data.get('access_token')
+                    if token:
+                        return token
+            except Exception:
+                continue
 
     return None
 
