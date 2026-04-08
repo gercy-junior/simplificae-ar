@@ -7848,7 +7848,9 @@ HTML_TEMPLATE = '''
 
             btn.innerHTML = '<span class="loader"></span> Gerando...';
 
-
+            // Se 'Cotacao Completa' marcada, gen_cotacao deve ser true
+            var _genCompleto = !!(document.getElementById('gen-completo') && document.getElementById('gen-completo').checked);
+            var _genCotacao  = document.getElementById('gen-cotacao').checked || _genCompleto;
 
             fetch('/generate', {
 
@@ -7866,10 +7868,7 @@ HTML_TEMPLATE = '''
 
 
 
-                        // Se 'Cotacao Completa' marcada, gen_cotacao deve ser true
-                    var _genCompleto = !!(document.getElementById('gen-completo') && document.getElementById('gen-completo').checked);
-                    var _genCotacao  = document.getElementById('gen-cotacao').checked || _genCompleto;
-                    gen_cotacao: _genCotacao,
+                        gen_cotacao: _genCotacao,
 
                         gen_selecao: document.getElementById('gen-selecao').checked,
 
