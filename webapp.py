@@ -6225,7 +6225,7 @@ HTML_TEMPLATE = '''
 
         // Verifica no load e a cada 2 minutos
         function _scheduleUpdateCheck() {
-            _scheduleUpdateCheck();
+            checkForUpdates();
             setInterval(checkForUpdates, 2 * 60 * 1000);
         }
 
@@ -6406,7 +6406,7 @@ HTML_TEMPLATE = '''
 
 
 
-        checkForUpdates();
+        _scheduleUpdateCheck();
 
 
 
