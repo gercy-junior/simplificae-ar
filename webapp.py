@@ -192,6 +192,20 @@ import base64
 
 import secrets as py_secrets
 
+# Telemetria de uso — importação silenciosa, nunca bloqueia o app
+try:
+    import usage_log as _usage_log
+    _TELEMETRIA_OK = True
+except ImportError:
+    _TELEMETRIA_OK = False
+
+# Auto-update — importação silenciosa
+try:
+    import updater as _updater
+    _UPDATER_OK = True
+except ImportError:
+    _UPDATER_OK = False
+
 
 
 # Paths
@@ -204,13 +218,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 RAIZES_PATH = os.path.join(BASE_DIR, 'raizes_conhecidas.json')
 
+# Quando rodando como .exe (PyInstaller frozen), BASE_DIR aponta para
+# _internal/ que é temporário e some entre execuções do processo.
+# ~/SimplificaE_data é o diretório estável para uploads, outputs e dados.
+if getattr(sys, 'frozen', False):
+    _DATA_DIR = os.path.join(os.path.expanduser('~'), 'SimplificaE_data')
+else:
+    _DATA_DIR = BASE_DIR
+
+UPLOAD_DIR = os.path.join(_DATA_DIR, 'uploads')
 
 
-UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
 
-
-
-OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
+OUTPUT_DIR = os.path.join(_DATA_DIR, 'output')
 
 
 
@@ -6175,109 +6195,74 @@ HTML_TEMPLATE = '''
 
 
         function checkForUpdates() {
-
-
-
-            const serverUrl = null; // sera preenchido pelo server_status
-
-
-
             fetch('/check_update')
-
-
-
             .then(r => r.json())
-
-
-
             .then(data => {
-
-
-
-                if (data.update_available) {
-
-
-
+                // Suporta tanto campo legado (update_available) quanto novo (has_update)
+                const temUpdate = data.has_update || data.update_available;
+                if (temUpdate) {
+                    if (document.getElementById('update-banner')) return; // já existe
                     const banner = document.createElement('div');
-
-
-
+                    banner.id = 'update-banner';
                     banner.className = 'status status-info';
-
-
-
-                    banner.style.margin = '0 24px';
-
-
-
-                    banner.innerHTML = 'Nova versao disponivel (v' + data.remote_version + '). Versao atual: v' + data.local_version + ' <button class="btn btn-primary" style="padding:4px 14px;font-size:12px;margin-left:12px;" onclick="applyUpdate()">Atualizar agora</button>';
-
-
-
-                    document.querySelector('.tabs').after(banner);
-
-
-
+                    banner.style.cssText = 'margin:0 24px;display:flex;align-items:center;justify-content:space-between;';
+                    const remote = data.remote_version || '';
+                    const local  = data.local_version  || '';
+                    banner.innerHTML = '<span>🔄 Nova versão disponível <strong>v' + remote + '</strong> — você está na v' + local + '</span>'
+                        + '<button id="btn-update" class="btn btn-primary" style="padding:4px 16px;font-size:12px;margin-left:12px;" onclick="applyUpdate()">'
+                        + '⬇ Atualizar agora</button>';
+                    const tabs = document.querySelector('.tabs');
+                    if (tabs) tabs.after(banner);
                 }
-
-
-
             })
-
-
-
             .catch(() => {});
+        }
 
-
-
+        function _updateBannerProgress(pct, status) {
+            const btn = document.getElementById('btn-update');
+            if (!btn) return;
+            if (status === 'downloading') {
+                btn.textContent = 'Baixando... ' + pct + '%';
+                btn.disabled = true;
+            } else if (status === 'ready') {
+                btn.textContent = '✅ Reiniciando...';
+                btn.disabled = true;
+            } else if (status === 'error') {
+                btn.textContent = '❌ Erro — tente novamente';
+                btn.disabled = false;
+            }
         }
 
 
 
         function applyUpdate() {
-
-
-
             fetch('/apply_update', {method: 'POST'})
-
-
-
             .then(r => r.json())
-
-
-
             .then(data => {
-
-
-
-                if (data.status === 'ok') {
-
-
-
-                    alert('Atualizado para v' + data.version + '! A pagina vai recarregar.');
-
-
-
+                if (data.status === 'download iniciado') {
+                    // Polling do progresso a cada 1s
+                    const poll = setInterval(() => {
+                        fetch('/check_update').then(r => r.json()).then(s => {
+                            _updateBannerProgress(s.download_progress || 0, s.download_status || '');
+                            if (s.download_status === 'ready') {
+                                clearInterval(poll);
+                                // App vai reiniciar sozinho via update.bat — avisa operador
+                                setTimeout(() => {
+                                    alert('Atualização concluída! O app vai reiniciar automaticamente. Aguarde alguns segundos e reabra o SimplificaÊ.');
+                                }, 1500);
+                            } else if (s.download_status === 'error') {
+                                clearInterval(poll);
+                            }
+                        });
+                    }, 1000);
+                } else if (data.status === 'ok') {
+                    alert('Atualizado! A página vai recarregar.');
                     location.reload();
-
-
-
                 } else {
-
-
-
-                    alert('Erro: ' + (data.error || 'desconhecido'));
-
-
-
+                    alert('Erro: ' + (data.error || data.status || 'desconhecido'));
                 }
-
-
-
-            });
-
-
-
+            })
+            .catch(e => alert('Erro ao iniciar atualização: ' + e));
         }
 
 
@@ -9781,7 +9766,6 @@ html += '</td></tr>';
 
                         var taxaLabel2 = e.taxa ? (parseFloat(e.taxa).toFixed(2) + '%') : '-';
                     var opLabel2 = e.valor_operavel > 0 ? formatBRL(e.valor_operavel) : '<span style="color:#9E9E9E;">-</span>';
-                    var opLabel2 = e.valor_operavel > 0 ? formatBRL(e.valor_operavel) : '<span style="color:#9E9E9E;">-</span>';
 
                     html += '<tr><td><strong>' + e.nome + '</strong></td><td class="text-right">' + e.urs.toLocaleString('pt-BR') + '</td><td class="text-right">' + formatBRL(e.valor) + '</td><td class="text-right" style="color:#1B5E20;font-weight:600;">' + opLabel2 + '</td><td class="text-right" style="color:#1B5E20;font-weight:600;">' + opLabel2 + '</td><td class="text-right" style="color:#1B5E20;font-weight:600;">' + taxaLabel2 + '</td><td>';
 
@@ -11550,6 +11534,8 @@ def generate():
 
     data = request.json
 
+    _t0_gen = time.time()  # telemetria: marca início
+
 
 
     sid = data['session_id']
@@ -11844,6 +11830,10 @@ def generate():
 
 
 
+            'valor_operavel': sum(r.get('disponivel', 0) for r in emp_recs),
+
+
+
             'taxa': round(taxa_map.get(emp_nome, taxa_pct) if taxa_map else taxa_pct, 4)
 
 
@@ -11914,7 +11904,22 @@ def generate():
 
     })
 
-
+    # Telemetria: registra 1 evento por empresa gerada
+    if _TELEMETRIA_OK:
+        _dur_gen = round(time.time() - _t0_gen, 1)
+        for _e in result_empresas:
+            _usage_log.registrar(
+                operador=email or '',
+                evento='generate',
+                empresa=_e.get('nome', ''),
+                urs=_e.get('urs', 0),
+                valor_bruto=_e.get('valor', 0.0),
+                valor_operavel=_e.get('valor_operavel', 0.0),
+                taxa=_e.get('taxa', 0.0),
+                duracao_s=_dur_gen,
+                status='ok',
+                session_id=sid,
+            )
 
     return jsonify({
 
@@ -15424,81 +15429,32 @@ def server_status():
 
 
 @app.route('/check_update')
-
-
-
 def check_update():
-
-
-
+    # Usa updater.py (GitHub) se disponível, fallback para HISTORY_SERVER_URL legado
+    if _UPDATER_OK:
+        return jsonify(_updater.get_status())
     server_url = os.environ.get('HISTORY_SERVER_URL', '').strip()
-
-
-
     if not server_url or not http_requests:
-
-
-
         return jsonify({'update_available': False, 'local_version': APP_VERSION})
-
-
-
     try:
-
-
-
         r = http_requests.get(f'{server_url}/api/version', timeout=5, verify=False)
-
-
-
         if r.status_code == 200:
-
-
-
             remote = r.json().get('version', APP_VERSION)
-
-
-
-            return jsonify({
-
-
-
-                'update_available': remote != APP_VERSION,
-
-
-
-                'local_version': APP_VERSION,
-
-
-
-                'remote_version': remote
-
-
-
-            })
-
-
-
+            return jsonify({'update_available': remote != APP_VERSION, 'local_version': APP_VERSION, 'remote_version': remote})
     except Exception:
-
-
-
         pass
-
-
-
     return jsonify({'update_available': False, 'local_version': APP_VERSION})
 
 
-
 @app.route('/apply_update', methods=['POST'])
-
-
-
 def apply_update():
-
-
-
+    # Usa updater.py (GitHub) se disponível
+    if _UPDATER_OK:
+        status = _updater.get_status()
+        if status.get('has_update'):
+            _updater.start_download_and_update()
+            return jsonify({'status': 'download iniciado'})
+        return jsonify({'status': 'nenhuma atualização disponível'})
     server_url = os.environ.get('HISTORY_SERVER_URL', '').strip()
 
 
@@ -16251,6 +16207,112 @@ def load_history():
 
 
 
+
+# ---------------------------------------------------------------
+# SINCRONIZACAO DE HISTORICO COM GITHUB
+# ---------------------------------------------------------------
+GITHUB_TOKEN   = os.environ.get('GITHUB_METRICS_TOKEN', '')
+GITHUB_REPO    = 'gercy-junior/simplificae-ar'
+GITHUB_API     = 'https://api.github.com'
+
+def _push_history_github(entry):
+    """
+    Envia o registro de historico para o GitHub em background.
+    Cria/atualiza arquivo: metrics/historico_{operador}.json
+    Falha silenciosamente se sem internet ou sem token.
+    """
+    try:
+        import json as _json, base64, ssl, urllib.request, re as _re, socket as _sock
+
+        # Verificar conectividade rapida
+        try:
+            _sock.create_connection(('api.github.com', 443), timeout=3)
+        except Exception:
+            return  # sem internet, nao bloquear
+
+        token = GITHUB_TOKEN
+        if not token:
+            # Tentar ler do .env
+            env_path = os.path.join(BASE_DIR, '.env')
+            if not os.path.exists(env_path):
+                env_path = os.path.join(BASE_DIR, '_internal', '.env')
+            if os.path.exists(env_path):
+                with open(env_path, 'r', encoding='utf-8', errors='ignore') as _f:
+                    for _line in _f:
+                        if _line.startswith('GITHUB_METRICS_TOKEN='):
+                            token = _line.split('=', 1)[1].strip()
+                            break
+
+        if not token:
+            return  # sem token, nao sincronizar
+
+        # Nome do arquivo por operador (sanitizar email)
+        operador = entry.get('operador', 'desconhecido')
+        safe_op  = _re.sub(r'[^a-zA-Z0-9._-]', '_', operador)
+        filename = f'metrics/historico_{safe_op}.json'
+        api_url  = f'{GITHUB_API}/repos/{GITHUB_REPO}/contents/{filename}'
+
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        headers = {
+            'Authorization': f'token {token}',
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'SimplificaE-Metrics/1.0'
+        }
+
+        # Tentar GET para obter SHA e conteudo atual
+        existing_data = []
+        sha = None
+        try:
+            req = urllib.request.Request(api_url, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
+                resp = _json.loads(r.read())
+                sha  = resp.get('sha', '')
+                content_b64 = resp.get('content', '').replace('\n', '')
+                if content_b64:
+                    existing_data = _json.loads(base64.b64decode(content_b64).decode('utf-8'))
+        except Exception:
+            pass  # arquivo nao existe ainda
+
+        # Adicionar novo registro
+        if not isinstance(existing_data, list):
+            existing_data = []
+        existing_data.insert(0, entry)
+        existing_data = existing_data[:500]  # max 500 registros por operador
+
+        # Codificar conteudo
+        new_content = base64.b64encode(
+            _json.dumps(existing_data, ensure_ascii=False, indent=2).encode('utf-8')
+        ).decode('utf-8')
+
+        # PUT para criar/atualizar
+        body = {
+            'message': f'metrics: cotacao {entry.get("tipo", "")} por {operador}',
+            'content': new_content
+        }
+        if sha:
+            body['sha'] = sha
+
+        req2 = urllib.request.Request(
+            api_url,
+            data=_json.dumps(body).encode('utf-8'),
+            headers=headers,
+            method='PUT'
+        )
+        with urllib.request.urlopen(req2, context=ctx, timeout=10) as r:
+            pass  # sucesso
+
+    except Exception:
+        pass  # silencioso — nao impacta o usuario
+
+def _push_history_background(entry):
+    """Dispara sync em thread daemon (nao bloqueia o usuario)."""
+    import threading as _thr
+    _thr.Thread(target=_push_history_github, args=(entry,), daemon=True).start()
+
 def save_history_entry(entry):
 
 
@@ -16828,7 +16890,9 @@ def send_email_route():
 
             srv.login(cfg['smtp_user'], cfg['smtp_pass'])
 
-            srv.sendmail(cfg['smtp_user'], to_emails_list, msg.as_string())
+            # as_bytes() em vez de as_string() para suportar caracteres
+            # não-ASCII (ex: \xa0, acentos) em nomes de empresa/assunto
+            srv.sendmail(cfg['smtp_user'], to_emails_list, msg.as_bytes())
 
         status_e = 'enviado'
 
@@ -16864,7 +16928,19 @@ def send_email_route():
 
     })
 
-
+    # Telemetria: evento de envio de e-mail
+    if _TELEMETRIA_OK:
+        _usage_log.registrar(
+            operador=cfg.get('smtp_user', ''),
+            evento='send_email',
+            empresa=empresa,
+            urs=urs,
+            valor_bruto=valor_total,
+            valor_operavel=valor_operavel,
+            taxa=float(data.get('taxa_pct', 0) or 0),
+            status=status_e,
+            session_id=sid,
+        )
 
     # Salvar e-mail para reuso
 
@@ -16951,7 +17027,9 @@ if __name__ == '__main__':
 
     _warmup_databricks()
 
-
+    # Verificar atualizações em background (não bloqueia startup)
+    if _UPDATER_OK:
+        _updater.check_update_async()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
