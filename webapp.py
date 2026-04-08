@@ -6176,28 +6176,45 @@ HTML_TEMPLATE = '''
         function checkForUpdates() {
             fetch('/check_update')
             .then(r => r.json())
-            .then(data => {
-                // Suporta tanto campo legado (update_available) quanto novo (has_update)
-                const temUpdate = data.has_update || data.update_available;
-                if (temUpdate) {
-                    if (document.getElementById('update-banner')) return; // já existe
-                    const banner = document.createElement('div');
-                    banner.id = 'update-banner';
-                    banner.className = 'status status-info';
-                    banner.style.cssText = 'margin:0 24px;display:flex;align-items:center;justify-content:space-between;';
-                    const remote = data.remote_version || '';
-                    const local  = data.local_version  || '';
-                    banner.innerHTML = '<span>🔄 Nova versão disponível <strong>v' + remote + '</strong> — você está na v' + local + '</span>'
-                        + '<button id="btn-update" class="btn btn-primary" style="padding:4px 16px;font-size:12px;margin-left:12px;" onclick="applyUpdate()">'
-                        + '⬇ Atualizar agora</button>';
-                    const tabs = document.querySelector('.tabs');
-                    if (tabs) tabs.after(banner);
+            .then(function(data) {
+                var temUpdate = data.has_update || data.update_available;
+                var remote = data.remote_version || '';
+                var local  = data.local_version  || '';
+                if (!temUpdate) {
+                    var el = document.getElementById('update-banner');
+                    if (el) { el.remove(); document.body.style.paddingTop = ''; }
+                    return;
                 }
+                if (document.getElementById('update-banner')) return;
+                var banner = document.createElement('div');
+                banner.id = 'update-banner';
+                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
+                    + 'background:linear-gradient(90deg,#1B5E20,#2E7D32);color:white;'
+                    + 'padding:10px 24px;display:flex;align-items:center;'
+                    + 'justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:14px;';
+                var localTxt = local ? ' &mdash; voc&#234; est&#225; na <strong>' + local + '</strong>' : '';
+                banner.innerHTML =
+                    '<span>'
+                    + '<strong style="font-size:15px;">&#128260; Nova vers&#227;o dispon&#237;vel!</strong>'
+                    + '<span style="margin-left:12px;opacity:0.9;">Vers&#227;o <strong>' + remote + '</strong> pronta' + localTxt + '</span>'
+                    + '</span>'
+                    + '<div style="display:flex;gap:8px;align-items:center;">'
+                    + '<button id="btn-update" onclick="applyUpdate()" style="background:white;color:#1B5E20;border:none;border-radius:6px;padding:6px 18px;font-size:13px;font-weight:bold;cursor:pointer;">&#11015; Atualizar agora</button>'
+                    + '<button onclick="document.getElementById(\"update-banner\").remove();document.body.style.paddingTop=\"\";" style="background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">Agora n&#227;o</button>'
+                    + '</div>';
+                document.body.prepend(banner);
+                document.body.style.paddingTop = '52px';
             })
-            .catch(() => {});
+            .catch(function() {});
         }
 
-        function _updateBannerProgress(pct, status) {
+        // Verifica no load e a cada 2 minutos
+        function _scheduleUpdateCheck() {
+            _scheduleUpdateCheck();
+            setInterval(checkForUpdates, 2 * 60 * 1000);
+        }
+
+                function _updateBannerProgress(pct, status) {
             const btn = document.getElementById('btn-update');
             if (!btn) return;
             if (status === 'downloading') {
