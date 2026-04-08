@@ -48,15 +48,22 @@ _download_status   = ''   # '', 'downloading', 'ready', 'error'
 
 
 def _read_local_version() -> str:
-    """Lê VERSION do diretório do executável ou do script."""
+    """Lê VERSION do diretório do executável ou do script.
+    Procura em: raiz do exe, _internal/, diretório do script.
+    """
     candidates = []
     if getattr(sys, 'frozen', False):
-        candidates.append(os.path.join(os.path.dirname(sys.executable), 'VERSION'))
+        exe_dir = os.path.dirname(sys.executable)
+        candidates.append(os.path.join(exe_dir, 'VERSION'))
+        candidates.append(os.path.join(exe_dir, '_internal', 'VERSION'))
+    # Diretório do próprio módulo updater.py
     candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION'))
     for p in candidates:
         if os.path.exists(p):
             try:
-                return open(p).read().strip()
+                v = open(p).read().strip()
+                if v:
+                    return v
             except Exception:
                 pass
     return '00000000_000'
