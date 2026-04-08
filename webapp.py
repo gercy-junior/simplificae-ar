@@ -7839,15 +7839,14 @@ HTML_TEMPLATE = '''
 
 
 
-                        gen_cotacao: document.getElementById('gen-cotacao').checked,
-
-
+                        // Se 'Cotacao Completa' marcada, gen_cotacao deve ser true
+                    var _genCompleto = !!(document.getElementById('gen-completo') && document.getElementById('gen-completo').checked);
+                    var _genCotacao  = document.getElementById('gen-cotacao').checked || _genCompleto;
+                    gen_cotacao: _genCotacao,
 
                         gen_selecao: document.getElementById('gen-selecao').checked,
 
-
-
-                        only_eligible: !(document.getElementById('gen-completo') && document.getElementById('gen-completo').checked),
+                        only_eligible: !_genCompleto,
 
                 taxa_map: getTaxaMap()})
 
