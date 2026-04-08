@@ -15158,19 +15158,22 @@ def generate_custom():
 
 def download(sid, empresa):
 
-
-
     emp_dir = os.path.join(OUTPUT_DIR, sid, empresa)
 
-
-
     if not os.path.exists(emp_dir):
-
-
-
         return 'Nao encontrado', 404
 
-
+    # Cotacao_COMPLETO_ e gerada em thread background ? aguarda ate 15s antes de zipar
+    _prefixes = ('Cotacao_COMPLETO_', 'Cotacao_Elegiveis_')
+    def _tem_cotacao():
+        try:
+            return any(f.startswith(_prefixes) and f.endswith('.xlsx')
+                       for f in os.listdir(emp_dir))
+        except Exception:
+            return False
+    _w = 0
+    while not _tem_cotacao() and _w < 15:
+        time.sleep(1); _w += 1
 
     buf = BytesIO()
 
@@ -16644,6 +16647,7 @@ def send_email_route():
     from email.mime.base import MIMEBase
 
     from email import encoders as _enc
+    from email.header import Header as _Header
 
 
 
@@ -16820,11 +16824,20 @@ def send_email_route():
 
     msg = MIMEMultipart('alternative')
 
-    msg['From']    = '{} <{}>'.format(cfg.get('display_name','PicPay AR'), cfg['smtp_user'])
+    # Encodar headers para suportar caracteres nao-ASCII (ex: \xa0 em nomes de empresa)
+    def _safe_header(s):
+        try:
+            s.encode('ascii')
+            return s
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return str(_Header(s, 'utf-8'))
+
+    _display = cfg.get('display_name', 'PicPay AR') or 'PicPay AR'
+    msg['From']    = '{} <{}>'.format(_safe_header(_display), cfg['smtp_user'])
 
     msg['To']      = ', '.join(to_emails_list)
 
-    msg['Subject'] = subject
+    msg['Subject'] = _safe_header(subject)
 
     msg.attach(MIMEText(body, 'html', 'utf-8'))
 
