@@ -1,0 +1,11 @@
+[
+  {
+    "operador": "cesar.oda@picpay.com",
+    "tipo": "completo",
+    "empresa": "Teste S.A.",
+    "cnpj": "12345678000195",
+    "valor_bruto": 1000000.0,
+    "taxa": 1.22,
+    "timestamp": "2026-04-08T16:05:10.709616"
+  }
+]
