@@ -6223,12 +6223,6 @@ HTML_TEMPLATE = '''
             .catch(function() {});
         }
 
-        // Verifica no load e a cada 2 minutos
-        function _scheduleUpdateCheck() {
-            checkForUpdates();
-            setInterval(checkForUpdates, 2 * 60 * 1000);
-        }
-
                 function _updateBannerProgress(pct, status) {
             const btn = document.getElementById('btn-update');
             if (!btn) return;
@@ -6406,7 +6400,8 @@ HTML_TEMPLATE = '''
 
 
 
-        _scheduleUpdateCheck();
+        checkForUpdates();
+        setInterval(checkForUpdates, 2 * 60 * 1000);
 
 
 
@@ -16370,6 +16365,9 @@ def save_history_entry(entry):
 
 
             pass  # falha silenciosa - nao bloqueia a operacao
+
+    # Sincronizar com GitHub em background (silencioso)
+    _push_history_background(entry)
 
 
 
