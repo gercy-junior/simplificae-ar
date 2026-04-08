@@ -11057,10 +11057,12 @@ HTML_TEMPLATE = '''
 
 
 def index():
-
-
-
-    return render_template_string(HTML_TEMPLATE, operadores=OPERADORES, app_version=APP_VERSION)
+    from flask import make_response
+    resp = make_response(render_template_string(HTML_TEMPLATE, operadores=OPERADORES, app_version=APP_VERSION))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 
 
