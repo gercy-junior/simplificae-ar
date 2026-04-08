@@ -3536,11 +3536,26 @@ def get_databricks_token():
 
 
 
-    # 3. Fallback pro PAT do .env
-
-
-
-    return DATABRICKS_TOKEN
+    # 3. Fallback pro PAT do .env ? validar antes de usar
+    #    PAT expirado (dapi*) retorna 403 e nao deve ser retornado
+    if DATABRICKS_TOKEN:
+        _pat = DATABRICKS_TOKEN.strip()
+        # Se comecar com 'dapi', eh PAT ? testar se ainda e valido
+        if _pat.startswith('dapi'):
+            try:
+                _r = http_requests.get(
+                    f'{DATABRICKS_HOST}/api/2.0/clusters/list',
+                    headers={'Authorization': f'Bearer {_pat}'},
+                    timeout=8
+                )
+                if _r.status_code == 200:
+                    return _pat
+                # 403/401 = PAT expirado, ignorar
+            except Exception:
+                pass
+            return None  # PAT invalido ? nao usar
+        return _pat  # token nao-dapi (OAuth salvo no .env), retornar sem validar
+    return None
 
 
 
