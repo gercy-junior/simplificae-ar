@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 
 
@@ -7926,21 +7926,16 @@ HTML_TEMPLATE = '''
 
 
                 data.empresas.forEach(e => {
-
-
-
                     var taxaLabel1 = e.taxa ? (e.taxa.toFixed(2) + '%') : '-';
-                var opLabel1 = e.valor_operavel > 0 ? formatBRL(e.valor_operavel) : '<span style="color:#9E9E9E;">-</span>';
-
-                html += '<tr><td><strong>'+e.nome+'</strong></td><td class="text-right">'+e.urs.toLocaleString()+'</td><td class="text-right">'+formatBRL(e.valor)+'</td><td class="text-right" style="color:#1B5E20;">'+opLabel1+'</td><td class="text-right" style="color:#1B5E20;font-weight:600;">'+taxaLabel1+'</td><td>';
-
-
-
-                    
-
-
-
-                html += '<a href="/download/'+sessionId+'/'+encodeURIComponent(e.safe_name)+'" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">⬇️ Download</a>';
+                    var opLabel1   = e.valor_operavel > 0 ? formatBRL(e.valor_operavel) : '<span style="color:#9E9E9E;">-</span>';
+                    html += '<tr>';
+                    html += '<td><strong>'+e.nome+'</strong></td>';
+                    html += '<td class="text-right">'+e.urs.toLocaleString()+'</td>';
+                    html += '<td class="text-right">'+formatBRL(e.valor)+'</td>';
+                    html += '<td class="text-right" style="color:#1B5E20;">'+opLabel1+'</td>';
+                    html += '<td class="text-right" style="color:#1B5E20;font-weight:600;">'+taxaLabel1+'</td>';
+                    html += '<td>';
+                    html += '<a href="/download/'+sessionId+'/'+encodeURIComponent(e.safe_name)+'" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">⬇ Download</a>';
 
 
 
@@ -7948,14 +7943,8 @@ HTML_TEMPLATE = '''
 
                 
 
-                html += '<button class="btn btn-email-action" data-sid="'+sessionId+'" data-safe="'+encodeURIComponent(e.safe_name)+'" data-nome="'+encodeURIComponent(e.nome)+'" data-urs="'+e.urs+'" data-valor="'+(e.valor||0)+'" data-operavel="'+(e.valor_operavel||0)+'" data-taxa="'+(e.taxa||0)+'" style="padding:6px 12px;font-size:12px;background:#E3F2FD;border:1px solid #90CAF9;border-radius:6px;cursor:pointer;margin-left:4px;">&#9993;&#65039; E-mail</button>';
-
-
-
-html += '</td></tr>';
-
-
-
+                                    html += '<button class="btn btn-email-action" data-sid="'+sessionId+'" data-safe="'+encodeURIComponent(e.safe_name)+'" data-nome="'+encodeURIComponent(e.nome)+'" data-urs="'+e.urs+'" data-valor="'+(e.valor||0)+'" data-operavel="'+(e.valor_operavel||0)+'" data-taxa="'+(e.taxa||0)+'" style="padding:6px 12px;font-size:12px;background:#E3F2FD;border:1px solid #90CAF9;border-radius:6px;cursor:pointer;margin-left:4px;">&#9993;&#65039; E-mail</button>';
+                    html += '</td></tr>';
                 });
 
 
@@ -9740,13 +9729,15 @@ html += '</td></tr>';
 
 
                     data.empresas.forEach(function(e) {
-
-
-
                         var taxaLabel2 = e.taxa ? (parseFloat(e.taxa).toFixed(2) + '%') : '-';
-                    var opLabel2 = e.valor_operavel > 0 ? formatBRL(e.valor_operavel) : '<span style="color:#9E9E9E;">-</span>';
-
-                    html += '<tr><td><strong>' + e.nome + '</strong></td><td class="text-right">' + e.urs.toLocaleString('pt-BR') + '</td><td class="text-right">' + formatBRL(e.valor) + '</td><td class="text-right" style="color:#1B5E20;font-weight:600;">' + opLabel2 + '</td><td class="text-right" style="color:#1B5E20;font-weight:600;">' + opLabel2 + '</td><td class="text-right" style="color:#1B5E20;font-weight:600;">' + taxaLabel2 + '</td><td>';
+                        var opLabel2   = e.valor_operavel > 0 ? formatBRL(e.valor_operavel) : '<span style="color:#9E9E9E;">-</span>';
+                        html += '<tr>';
+                        html += '<td><strong>' + e.nome + '</strong></td>';
+                        html += '<td class="text-right">' + e.urs.toLocaleString('pt-BR') + '</td>';
+                        html += '<td class="text-right">' + formatBRL(e.valor) + '</td>';
+                        html += '<td class="text-right" style="color:#1B5E20;font-weight:600;">' + opLabel2 + '</td>';
+                        html += '<td class="text-right" style="color:#1B5E20;font-weight:600;">' + taxaLabel2 + '</td>';
+                        html += '<td>';
 
 
 
@@ -9762,14 +9753,8 @@ html += '</td></tr>';
 
                     
 
-                    html += '<button class="btn btn-email-action" data-sid="'+sid+'" data-safe="'+encodeURIComponent(e.safe_name)+'" data-nome="'+encodeURIComponent(e.nome)+'" data-urs="'+e.urs+'" data-valor="'+(e.valor||0)+'" data-operavel="'+(e.valor_operavel||0)+'" data-taxa="'+(e.taxa||0)+'" style="padding:6px 12px;font-size:12px;background:#E3F2FD;border:1px solid #90CAF9;border-radius:6px;cursor:pointer;margin-left:4px;">&#9993;&#65039; E-mail</button>';
-
-
-
-html += '</td></tr>';
-
-
-
+                                            html += '<button class="btn btn-email-action" data-sid="'+sid+'" data-safe="'+encodeURIComponent(e.safe_name)+'" data-nome="'+encodeURIComponent(e.nome)+'" data-urs="'+e.urs+'" data-valor="'+(e.valor||0)+'" data-operavel="'+(e.valor_operavel||0)+'" data-taxa="'+(e.taxa||0)+'" style="padding:6px 12px;font-size:12px;background:#E3F2FD;border:1px solid #90CAF9;border-radius:6px;cursor:pointer;margin-left:4px;">&#9993;&#65039; E-mail</button>';
+                        html += '</td></tr>';
                     });
 
 
