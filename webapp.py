@@ -20,6 +20,8 @@ Conversor de Agenda em Lote -> Cotacao + Selecao de URs
 
 import os
 
+import sys
+
 
 
 import csv
