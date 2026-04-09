@@ -1,0 +1,1 @@
+{"timestamp": "2026-04-09T17:44:35", "operador": "gercy.junior@picpay.com", "maquina": "PPW-A202542113", "versao": "20260409_120113", "evento": "generate", "empresa": "TESTE_PUSH_AUTO", "urs": 100, "valor_bruto": 500000.0, "valor_operavel": 500000.0, "taxa": 1.22, "duracao_s": 21.3, "status": "ok", "detalhe": "", "session_id": "teste_push_auto"}
