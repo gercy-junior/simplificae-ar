@@ -8738,6 +8738,15 @@ HTML_TEMPLATE = '''
 
                 let html = '<div class="status status-success">✅ '+data.urs.toLocaleString()+' URs | '+formatBRL(data.valor)+' | '+data.periodo+'</div>';
 
+                if (data.ur_parcial && data.ur_parcial.disponivel_total > data.valor) {
+                    var economia = data.ur_parcial.disponivel_total - data.valor;
+                    html += '<div style="font-size:12px;color:#555;padding:4px 12px;margin-top:-6px;">'
+                        + '📌 URs selecionadas somam ' + formatBRL(data.ur_parcial.disponivel_total)
+                        + ' — valor efetivamente onerado: <strong>' + formatBRL(data.valor) + '</strong>'
+                        + ' (cessão parcial de ' + formatBRL(data.ur_parcial.remanescente) + ' poupada na última UR)'
+                        + '</div>';
+                }
+
 
 
                 if (data.aviso) {
@@ -15124,7 +15133,11 @@ def generate_custom():
 
 
 
-    _valor_bruto = sum(r.get('disponivel', 0) for r in filtered_no_inelig)
+    # Valor bruto real: usar _valor_cedido na UR parcial (não o disponivel cheio)
+    _valor_bruto = sum(
+        r.get('_valor_cedido', r.get('disponivel', 0))
+        for r in filtered_no_inelig
+    )
 
     # Identificar UR com cessão parcial (se houver)
     _ur_parcial = None
@@ -15138,6 +15151,7 @@ def generate_custom():
                 'disponivel':      round(_r.get('disponivel', 0), 2),
                 'cedido':          round(_r['_valor_cedido'], 2),
                 'remanescente':    round(_r.get('disponivel', 0) - _r['_valor_cedido'], 2),
+                'disponivel_total': round(sum(r.get('disponivel',0) for r in filtered_no_inelig), 2),
             }
             break
 
