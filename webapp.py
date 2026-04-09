@@ -14821,43 +14821,37 @@ def generate_custom():
 
     valor_alvo_aviso = None  # aviso de diferenca para o frontend
 
-
-
     if valor_alvo > 0:
-
-
 
         filtered_no_inelig.sort(key=lambda r: parse_date(r.get('data_liquidacao', '')) or datetime.max)
 
-
-
         selected = []
-
-
 
         acum = 0.0
 
-
-
         for r in filtered_no_inelig:
 
+            val_ur = r.get('disponivel', 0)
 
+            if acum + val_ur <= valor_alvo:
+                # Cabe inteiro — adiciona sem dúvida
+                selected.append(r)
+                acum += val_ur
 
-            selected.append(r)
+            else:
+                # Esta UR ultrapassa o alvo.
+                # Comparar: incluir (fica acima) vs. não incluir (fica abaixo)
+                # Escolher o que chega mais perto do valor-alvo.
+                diff_com    = abs((acum + val_ur) - valor_alvo)  # distância se incluir
+                diff_sem    = abs(acum - valor_alvo)             # distância se parar aqui
 
+                if diff_com <= diff_sem:
+                    # Incluir fica mais perto — adiciona e encerra
+                    selected.append(r)
+                    acum += val_ur
+                # else: não incluir — já temos o melhor resultado possível
 
-
-            acum += r.get('disponivel', 0)
-
-
-
-            if acum >= valor_alvo:
-
-
-
-                break  # para na UR que atingiu/ultrapassou o alvo
-
-
+                break  # em ambos os casos, encerra a seleção aqui
 
         filtered_no_inelig = selected
 
