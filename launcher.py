@@ -89,23 +89,44 @@ def verificar_e_atualizar():
         print()
         print('  NOVA VERSAO DISPONIVEL! Atualizando...')
         
-        # Salvar backup do atual
+        # Salvar backup do webapp atual
         bk = webapp_local + '.bak_autoupdate'
         shutil.copy2(webapp_local, bk)
         
-        # Salvar nova versao
+        # Salvar novo webapp.py
         with open(webapp_local, 'wb') as f:
             f.write(novo_conteudo)
-        
-        # Atualizar VERSION local com a versao remota para o banner do webapp funcionar
+
+        # Atualizar também os módulos auxiliares (updater.py, usage_log.py)
+        # Isso garante que operadores sempre tenham a versão mais recente de tudo
+        GITHUB_BASE = 'https://raw.githubusercontent.com/gercy-junior/simplificae-ar/main/'
+        for modulo in ['updater.py', 'usage_log.py']:
+            try:
+                req_m = urllib.request.Request(
+                    GITHUB_BASE + modulo,
+                    headers={'User-Agent': 'SimplificaE-AutoUpdate/1.0', 'Cache-Control': 'no-cache'}
+                )
+                with urllib.request.urlopen(req_m, context=ctx, timeout=10) as rm:
+                    conteudo = rm.read()
+                # Salvar na raiz e no _internal
+                for dest_dir in [BASE_DIR, INTERNAL_DIR]:
+                    dest = os.path.join(dest_dir, modulo)
+                    try:
+                        with open(dest, 'wb') as fd:
+                            fd.write(conteudo)
+                    except Exception:
+                        pass
+            except Exception:
+                pass  # falha silenciosa — não bloqueia o update principal
+
+        # Atualizar VERSION em todos os lugares
         try:
             req_v = urllib.request.Request(GITHUB_VERSION_URL, headers={'User-Agent': 'SimplificaE-AutoUpdate/1.0'})
             with urllib.request.urlopen(req_v, context=ctx, timeout=5) as rv:
                 nova_version = rv.read().decode('utf-8').strip()
-            # Salvar em TODOS os lugares onde VERSION pode ser lido
             for vpath in [
-                os.path.join(BASE_DIR, 'VERSION'),           # raiz do exe
-                os.path.join(INTERNAL_DIR, 'VERSION'),       # _internal
+                os.path.join(BASE_DIR, 'VERSION'),
+                os.path.join(INTERNAL_DIR, 'VERSION'),
             ]:
                 try:
                     with open(vpath, 'w') as vf:
