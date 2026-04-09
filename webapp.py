@@ -3214,23 +3214,16 @@ def generate_selecao(records, taxa_mensal, operator_email, seller_map, output_pa
 
             disp = r.get('disponivel', 0)
 
-
+            # Se seleção parcial foi aplicada (valor_alvo), usar o valor cedido parcial
+            requested = r.get('_valor_cedido', disp)
 
             writer.writerow([
 
-
-
                 r.get('cnpj_original', cnpj), sid, r.get('cnpj_adquirente', ''),
-
-
 
                 r.get('adquirente', ''), r.get('arranjo', ''), data_liq,
 
-
-
-                f"{disp:.2f}", f"{disp:.2f}", taxa_str, operator_email,
-
-
+                f"{disp:.2f}", f"{requested:.2f}", taxa_str, operator_email,
 
                 r.get('receivable_id', '')])
 
@@ -14826,32 +14819,29 @@ def generate_custom():
         filtered_no_inelig.sort(key=lambda r: parse_date(r.get('data_liquidacao', '')) or datetime.max)
 
         selected = []
-
         acum = 0.0
 
         for r in filtered_no_inelig:
-
             val_ur = r.get('disponivel', 0)
+            restante = round(valor_alvo - acum, 2)
+
+            if restante <= 0:
+                break  # alvo já atingido exatamente
 
             if acum + val_ur <= valor_alvo:
-                # Cabe inteiro — adiciona sem dúvida
+                # UR cabe inteira — sem alteração
+                r = dict(r)
+                r.pop('_valor_cedido', None)
                 selected.append(r)
                 acum += val_ur
 
             else:
-                # Esta UR ultrapassa o alvo.
-                # Comparar: incluir (fica acima) vs. não incluir (fica abaixo)
-                # Escolher o que chega mais perto do valor-alvo.
-                diff_com    = abs((acum + val_ur) - valor_alvo)  # distância se incluir
-                diff_sem    = abs(acum - valor_alvo)             # distância se parar aqui
-
-                if diff_com <= diff_sem:
-                    # Incluir fica mais perto — adiciona e encerra
-                    selected.append(r)
-                    acum += val_ur
-                # else: não incluir — já temos o melhor resultado possível
-
-                break  # em ambos os casos, encerra a seleção aqui
+                # UR ultrapassa o alvo — ceder apenas o valor restante necessário
+                r = dict(r)
+                r['_valor_cedido'] = restante  # cessão parcial da UR
+                selected.append(r)
+                acum = valor_alvo
+                break
 
         filtered_no_inelig = selected
 
