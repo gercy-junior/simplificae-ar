@@ -99,14 +99,19 @@ def verificar_e_atualizar():
         
         # Atualizar VERSION local com a versao remota para o banner do webapp funcionar
         try:
-            version_url = GITHUB_VERSION_URL
-            req_v = urllib.request.Request(version_url, headers={'User-Agent': 'SimplificaE-AutoUpdate/1.0'})
+            req_v = urllib.request.Request(GITHUB_VERSION_URL, headers={'User-Agent': 'SimplificaE-AutoUpdate/1.0'})
             with urllib.request.urlopen(req_v, context=ctx, timeout=5) as rv:
                 nova_version = rv.read().decode('utf-8').strip()
-            for vpath in [os.path.join(BASE_DIR, 'VERSION'), os.path.join(INTERNAL_DIR, 'VERSION')]:
-                if os.path.exists(os.path.dirname(vpath)):
+            # Salvar em TODOS os lugares onde VERSION pode ser lido
+            for vpath in [
+                os.path.join(BASE_DIR, 'VERSION'),           # raiz do exe
+                os.path.join(INTERNAL_DIR, 'VERSION'),       # _internal
+            ]:
+                try:
                     with open(vpath, 'w') as vf:
                         vf.write(nova_version + '\n')
+                except Exception:
+                    pass
         except Exception:
             pass
 

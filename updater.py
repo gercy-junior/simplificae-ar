@@ -89,14 +89,57 @@ def check_update_async():
     t.start()
 
 
+def _md5_local_webapp() -> str:
+    """MD5 do webapp.py local — mais confiável que VERSION para detectar updates."""
+    candidates = []
+    if getattr(sys, 'frozen', False):
+        exe_dir = os.path.dirname(sys.executable)
+        candidates.append(os.path.join(exe_dir, 'webapp.py'))
+    candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'webapp.py'))
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                import hashlib
+                with open(p, 'rb') as f:
+                    return hashlib.md5(f.read()).hexdigest()
+            except Exception:
+                pass
+    return ''
+
+
+def _fetch_remote_md5() -> str:
+    """MD5 do webapp.py no GitHub."""
+    try:
+        import hashlib
+        WEBAPP_URL = f'https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_BRANCH}/webapp.py'
+        req = urllib.request.Request(WEBAPP_URL, headers={'Cache-Control': 'no-cache'})
+        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
+            return hashlib.md5(r.read()).hexdigest()
+    except Exception:
+        return ''
+
+
 def _check_worker():
     global _update_available, _remote_version, _check_done
     try:
-        local  = _read_local_version()
-        remote = _fetch_remote_version()
+        local_version  = _read_local_version()
+        remote_version = _fetch_remote_version()
+
+        # Comparar por MD5 do webapp.py — mais confiável que VERSION
+        # (o launcher atualiza o webapp.py mas pode não atualizar o VERSION local)
+        local_md5  = _md5_local_webapp()
+        remote_md5 = _fetch_remote_md5() if local_md5 else ''
+
+        # Há update se VERSION é diferente OU se MD5 do webapp é diferente
+        has_update = False
+        if remote_version and _version_newer(remote_version, local_version):
+            has_update = True
+        elif local_md5 and remote_md5 and local_md5 != remote_md5:
+            has_update = True
+
         with _lock:
-            _remote_version   = remote
-            _update_available = bool(remote) and _version_newer(remote, local)
+            _remote_version   = remote_version
+            _update_available = has_update
             _check_done       = True
     except Exception:
         with _lock:
