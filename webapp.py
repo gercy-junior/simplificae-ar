@@ -8741,17 +8741,26 @@ HTML_TEMPLATE = '''
 
 
                 if (data.aviso) {
-
-
-
                     html += '<div class="status mt-2" style="background:#FFF8E1;color:#E65100;border:1px solid #F9A825;padding:10px;font-size:12px;">'
-
-
-
                         + '⚠️ ' + data.aviso + '</div>';
+                }
 
-
-
+                if (data.ur_parcial) {
+                    var up = data.ur_parcial;
+                    html += '<div class="status mt-2" style="background:#E8F5E9;border:1px solid #A5D6A7;padding:12px 16px;font-size:12px;border-radius:8px;">'
+                        + '<div style="font-weight:700;color:#1B5E20;margin-bottom:6px;">✂️ Cessão parcial aplicada na última UR</div>'
+                        + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+                        + '<tr><td style="color:#555;padding:2px 0;width:140px;">ID da UR</td>'
+                        + '<td style="font-family:monospace;color:#1B5E20;">' + up.receivable_id + '</td></tr>'
+                        + '<tr><td style="color:#555;padding:2px 0;">Vencimento</td>'
+                        + '<td>' + up.data_liquidacao + ' &nbsp;·&nbsp; ' + up.adquirente + ' / ' + up.arranjo + '</td></tr>'
+                        + '<tr><td style="color:#555;padding:2px 0;">Disponível na UR</td>'
+                        + '<td>' + formatBRL(up.disponivel) + '</td></tr>'
+                        + '<tr><td style="color:#555;padding:2px 0;font-weight:600;">Valor cedido</td>'
+                        + '<td style="font-weight:700;color:#2E7D32;">' + formatBRL(up.cedido) + '</td></tr>'
+                        + '<tr><td style="color:#555;padding:2px 0;">Remanescente na UR</td>'
+                        + '<td style="color:#757575;">' + formatBRL(up.remanescente) + '</td></tr>'
+                        + '</table></div>';
                 }
 
 
@@ -15117,6 +15126,21 @@ def generate_custom():
 
     _valor_bruto = sum(r.get('disponivel', 0) for r in filtered_no_inelig)
 
+    # Identificar UR com cessão parcial (se houver)
+    _ur_parcial = None
+    for _r in filtered_no_inelig:
+        if '_valor_cedido' in _r:
+            _ur_parcial = {
+                'receivable_id':  _r.get('receivable_id', ''),
+                'data_liquidacao': _r.get('data_liquidacao', ''),
+                'adquirente':      _r.get('adquirente', ''),
+                'arranjo':         _r.get('arranjo', ''),
+                'disponivel':      round(_r.get('disponivel', 0), 2),
+                'cedido':          round(_r['_valor_cedido'], 2),
+                'remanescente':    round(_r.get('disponivel', 0) - _r['_valor_cedido'], 2),
+            }
+            break
+
 
 
     resp = {
@@ -15152,12 +15176,10 @@ def generate_custom():
 
 
     if valor_alvo_aviso:
-
-
-
         resp['aviso'] = valor_alvo_aviso
 
-
+    if _ur_parcial:
+        resp['ur_parcial'] = _ur_parcial
 
     return jsonify(resp)
 
