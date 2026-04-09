@@ -16917,9 +16917,9 @@ def send_email_route():
 
             srv.login(cfg['smtp_user'], cfg['smtp_pass'])
 
-            # as_bytes() em vez de as_string() para suportar caracteres
-            # não-ASCII (ex: \xa0, acentos) em nomes de empresa/assunto
-            srv.sendmail(cfg['smtp_user'], to_emails_list, msg.as_bytes())
+            # send_message() é o método correto para objetos MIME —
+            # nunca tenta encodar em ASCII, suporta qualquer caractere Unicode
+            srv.send_message(msg, cfg['smtp_user'], to_emails_list)
 
         status_e = 'enviado'
 
