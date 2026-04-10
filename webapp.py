@@ -3160,7 +3160,8 @@ def generate_selecao(records, taxa_mensal, operator_email, seller_map, output_pa
 
 
 
-    taxa_str = f"{taxa_mensal:.2f}%"
+    # 4 casas decimais para preservar taxas como 1.055% sem arredondamento
+    taxa_str = f"{taxa_mensal:.4f}%"
 
 
 
