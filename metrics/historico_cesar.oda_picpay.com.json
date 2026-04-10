@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "10/04/2026 11:20",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Personalizada - SUPERMERCADO TATICO",
+    "empresas": [
+      "SUPERMERCADO TATICO"
+    ],
+    "total_urs": 41,
+    "total_valor": 4058350.7,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "filtros": {
+      "valor_alvo": 0,
+      "adquirente": "Cielo,Getnet",
+      "arranjo": "VCC",
+      "periodo": "04/05/2026 a 11/05/2026"
+    },
+    "session_id": "20260410_110608"
+  },
+  {
     "timestamp": "10/04/2026 11:08",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
