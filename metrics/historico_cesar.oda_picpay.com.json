@@ -1,5 +1,19 @@
 [
   {
+    "timestamp": "10/04/2026 15:35",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Completa",
+    "empresas": [
+      "REDE DROGAL"
+    ],
+    "total_urs": 60196,
+    "total_valor": 75253150.71,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "session_id": "20260410_152707"
+  },
+  {
     "timestamp": "10/04/2026 15:29",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
