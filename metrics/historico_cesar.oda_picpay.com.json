@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "10/04/2026 12:08",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Personalizada - Postos Luar",
+    "empresas": [
+      "Postos Luar"
+    ],
+    "total_urs": 6,
+    "total_valor": 157038.22,
+    "taxa": 1.28,
+    "di_periodo": 0.1465,
+    "filtros": {
+      "valor_alvo": 0,
+      "adquirente": "Getnet,PicPay",
+      "arranjo": "ECC,MCC,VCC",
+      "periodo": "11/05/2026"
+    },
+    "session_id": "20260410_110608"
+  },
+  {
     "timestamp": "10/04/2026 12:07",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
