@@ -16665,9 +16665,10 @@ def setup_email():
 
     cfg = {
 
-        'smtp_user':     data.get('smtp_user', '').strip(),
-
-        'smtp_pass':     data.get('smtp_pass', '').strip(),
+        # strip() + replace \xa0 (non-breaking space) por espaço normal
+        # Evita erro ascii ao copiar senha de PDF/Word/e-mail
+        'smtp_user':     data.get('smtp_user', '').strip().replace('\xa0', ' '),
+        'smtp_pass':     data.get('smtp_pass', '').strip().replace('\xa0', ' '),
 
         'smtp_host':     data.get('smtp_host', 'smtp.gmail.com'),
 
