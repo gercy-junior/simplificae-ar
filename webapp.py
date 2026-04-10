@@ -6233,6 +6233,17 @@ HTML_TEMPLATE = '''
 
 
 
+        function restartApp() {
+            if (!confirm('Reiniciar o Simplifica? para carregar a vers?o mais recente?')) return;
+            const btn = document.getElementById('btn-restart');
+            if (btn) { btn.disabled=true; btn.textContent='Reiniciando...'; }
+            fetch('/restart', {method: 'POST'})
+            .then(() => {
+                setTimeout(() => location.reload(), 3000);
+            })
+            .catch(() => setTimeout(() => location.reload(), 3000));
+        }
+
         function applyUpdate() {
             fetch('/apply_update', {method: 'POST'})
             .then(r => r.json())
@@ -6574,7 +6585,8 @@ HTML_TEMPLATE = '''
 
 
 
-                        + ' <a href="/oauth/login" class="btn btn-secondary" style="padding:3px 10px;font-size:11px;margin-left:4px;">Reconectar</a>';
+                        + ' <a href="/oauth/login" class="btn btn-secondary" style="padding:3px 10px;font-size:11px;margin-left:4px;">Reconectar</a>'
+                        + ' <button id="btn-restart" onclick="restartApp()" class="btn btn-secondary" style="padding:3px 10px;font-size:11px;margin-left:4px;background:#FFF3E0;border-color:#FF9800;color:#E65100;" title="Reinicia o app para carregar atualizacoes">&#8635; Reiniciar app</button>';
 
 
 
@@ -15380,6 +15392,17 @@ def api_update_file(filename):
 
     return 'Not found', 404
 
+
+
+@app.route('/restart', methods=['POST'])
+def restart_app():
+    """Reinicia o processo do app para carregar código novo do disco."""
+    import threading, time, os, sys
+    def _do_restart():
+        time.sleep(1)  # dar tempo para a resposta chegar ao browser
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+    threading.Thread(target=_do_restart, daemon=True).start()
+    return jsonify({'status': 'restarting'})
 
 
 @app.route('/server_status')
