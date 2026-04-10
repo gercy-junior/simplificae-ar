@@ -1,5 +1,20 @@
 [
   {
+    "timestamp": "10/04/2026 15:42",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Completa",
+    "empresas": [
+      "DEMERGE BRASIL FACILITADORA DE PAGAMENTOS LTDA",
+      "GOOGLE"
+    ],
+    "total_urs": 2654,
+    "total_valor": 1178499191.35,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "session_id": "20260410_154145"
+  },
+  {
     "timestamp": "10/04/2026 15:35",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
