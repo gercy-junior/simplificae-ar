@@ -6587,7 +6587,7 @@ HTML_TEMPLATE = '''
 
 
                         + ' <a href="/oauth/login" class="btn btn-secondary" style="padding:3px 10px;font-size:11px;margin-left:4px;">Reconectar</a>'
-                        + ' <button id="btn-restart" onclick="restartApp()" class="btn btn-secondary" style="padding:3px 10px;font-size:11px;margin-left:4px;background:#FFF3E0;border-color:#FF9800;color:#E65100;" title="Reinicia o app para carregar atualizacoes">&#8635; Reiniciar app</button>';
+
 
 
 
@@ -15398,10 +15398,23 @@ def api_update_file(filename):
 @app.route('/restart', methods=['POST'])
 def restart_app():
     """Reinicia o processo do app para carregar código novo do disco."""
-    import threading, time, os, sys
+    import threading, time, subprocess
+
     def _do_restart():
-        time.sleep(1)  # dar tempo para a resposta chegar ao browser
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+        time.sleep(1)
+        try:
+            if getattr(sys, 'frozen', False):
+                # Rodando como .exe — relançar o executável
+                exe = sys.executable
+                subprocess.Popen([exe], creationflags=0x00000008)  # DETACHED_PROCESS
+            else:
+                # Rodando como script Python
+                subprocess.Popen([sys.executable] + sys.argv)
+            # Encerrar o processo atual após lançar o novo
+            os._exit(0)
+        except Exception:
+            os._exit(0)
+
     threading.Thread(target=_do_restart, daemon=True).start()
     return jsonify({'status': 'restarting'})
 
