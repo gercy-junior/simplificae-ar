@@ -93,9 +93,17 @@ def verificar_e_atualizar():
         bk = webapp_local + '.bak_autoupdate'
         shutil.copy2(webapp_local, bk)
         
-        # Salvar novo webapp.py
+        # Salvar novo webapp.py na raiz E no _internal
         with open(webapp_local, 'wb') as f:
             f.write(novo_conteudo)
+        # Garantir que _internal também fica atualizado
+        webapp_internal = os.path.join(INTERNAL_DIR, 'webapp.py')
+        if webapp_internal != webapp_local and os.path.exists(INTERNAL_DIR):
+            try:
+                with open(webapp_internal, 'wb') as f:
+                    f.write(novo_conteudo)
+            except Exception:
+                pass
 
         # Atualizar também os módulos auxiliares (updater.py, usage_log.py)
         # Isso garante que operadores sempre tenham a versão mais recente de tudo
