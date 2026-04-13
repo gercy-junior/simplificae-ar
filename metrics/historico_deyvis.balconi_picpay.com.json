@@ -1,5 +1,22 @@
 [
   {
+    "timestamp": "13/04/2026 11:12",
+    "operador": "deyvis.balconi@picpay.com",
+    "usuario_maquina": "PPW-A202514800",
+    "tipo": "Completa",
+    "empresas": [
+      "ITAVEMA FRANCE VEICULOS",
+      "ITAVEMA MOTORS VEICULOS LTDA",
+      "ITAVEMA RIO VEICULOS E PECAS LTDA",
+      "Itavema"
+    ],
+    "total_urs": 13712,
+    "total_valor": 49630839.97,
+    "taxa": 1.29,
+    "di_periodo": 0.1465,
+    "session_id": "20260413_111101"
+  },
+  {
     "timestamp": "13/04/2026 09:28",
     "operador": "deyvis.balconi@picpay.com",
     "usuario_maquina": "PPW-A202514800",
