@@ -1,5 +1,19 @@
 [
   {
+    "timestamp": "14/04/2026 11:02",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Completa",
+    "empresas": [
+      "BETHEL EDUCACAO"
+    ],
+    "total_urs": 342,
+    "total_valor": 246889.15,
+    "taxa": 1.65,
+    "di_periodo": 0.1465,
+    "session_id": "20260414_110211"
+  },
+  {
     "timestamp": "14/04/2026 11:01",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
