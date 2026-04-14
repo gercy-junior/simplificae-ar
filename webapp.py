@@ -5518,6 +5518,120 @@ HTML_TEMPLATE = '''
 
 
 
+        <!-- HeroDash: Cotacao Rapida -->
+        <div class="card" id="card-hd-flow" style="border-left: 4px solid #1a73e8;">
+            <h2 style="color:#1a73e8;">&#x26A1; Cotacao Rapida - HeroDash</h2>
+            <p style="color:#555; font-size:13px; margin-bottom:12px;">
+                Informe o CNPJ (ou raiz com 8 digitos), baixa a agenda do HeroDash automaticamente,
+                gera a cotacao com taxa indicativa (0%) e envia para o cliente.
+            </p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+                <div class="form-group" style="flex:2; min-width:200px;">
+                    <label>CNPJ ou Raiz do CNPJ</label>
+                    <input type="text" id="hd-cnpj" placeholder="17678232000104 ou 17678232" maxlength="18">
+                </div>
+                <div class="form-group" style="flex:2; min-width:200px;">
+                    <label>E-mail do cliente <span style="color:#999">(opcional)</span></label>
+                    <input type="email" id="hd-email-cliente" placeholder="cliente@empresa.com">
+                </div>
+                <div class="form-group" style="flex:0 0 auto; display:flex; align-items:center; gap:8px; padding-top:22px;">
+                    <input type="checkbox" id="hd-enviar-email" style="width:16px;height:16px;">
+                    <label for="hd-enviar-email" style="margin:0; cursor:pointer;">Enviar e-mail</label>
+                </div>
+                <div class="form-group" style="flex:0 0 auto; display:flex; align-items:center; gap:8px; padding-top:22px;">
+                    <input type="checkbox" id="hd-use-raiz" checked style="width:14px;height:14px;">
+                    <label for="hd-use-raiz" style="margin:0; cursor:pointer;">Buscar por raiz</label>
+                </div>
+            </div>
+            <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button id="btn-hd-cotacao" onclick="hdCotacaoRapida()"
+                        style="background:#1a73e8; color:#fff; border:none; padding:10px 24px;
+                               border-radius:6px; font-size:15px; cursor:pointer; font-weight:600;">
+                    &#x26A1; Gerar Cotacao
+                </button>
+                <span id="hd-status-msg" style="font-size:13px; color:#555;"></span>
+            </div>
+            <div id="hd-result" style="margin-top:14px; display:none;">
+                <div style="padding:10px; background:#e8f5e9; border-radius:6px; font-size:13px;" id="hd-result-body"></div>
+            </div>
+        </div>
+        <script>
+        function hdCotacaoRapida() {
+            var cnpj = (document.getElementById('hd-cnpj').value || '').trim();
+            if (!cnpj) { alert('Informe o CNPJ ou raiz.'); return; }
+            var emailCliente = (document.getElementById('hd-email-cliente').value || '').trim();
+            var enviarEmail  = document.getElementById('hd-enviar-email').checked;
+            var useRaiz      = document.getElementById('hd-use-raiz').checked;
+            // pega email do operador do step 1
+            var opEl = document.getElementById('operador');
+            var opEmail = opEl ? opEl.value : '';
+            if (opEmail === 'outro') {
+                var opCustom = document.getElementById('operador-email');
+                opEmail = opCustom ? opCustom.value : '';
+            }
+
+            var btn = document.getElementById('btn-hd-cotacao');
+            var msg = document.getElementById('hd-status-msg');
+            var res = document.getElementById('hd-result');
+            var resBody = document.getElementById('hd-result-body');
+
+            btn.disabled = true;
+            msg.textContent = 'Solicitando agenda ao HeroDash... (pode levar ate 2 min)';
+            res.style.display = 'none';
+
+            fetch('/herodash/cotacao_rapida', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    cnpj: cnpj,
+                    use_raiz: useRaiz,
+                    operator_email: opEmail,
+                    email_cliente: emailCliente,
+                    enviar_email: (enviarEmail && !!emailCliente)
+                })
+            })
+            .then(function(r) { return r.json().then(function(d) { d._status = r.status; return d; }); })
+            .then(function(d) {
+                btn.disabled = false;
+                if (d.error) {
+                    msg.textContent = 'Erro: ' + d.error;
+                    return;
+                }
+                msg.textContent = 'Cotacao gerada com sucesso!';
+
+                var html = '<b>Cotacao Rapida HD</b><br><br>';
+                html += 'Arquivo HD: <code>' + (d.file_id || '-') + '</code><br>';
+                html += 'Registros: <b>' + d.records + '</b> URs | Taxa: <b>' + d.taxa_pct + '%</b><br><br>';
+
+                if (d.empresas && d.empresas.length > 0) {
+                    html += '<b>Empresas geradas:</b><ul style="margin:6px 0 8px 16px;">';
+                    d.empresas.forEach(function(e) {
+                        if (e.error) {
+                            html += '<li>ERRO: ' + e.empresa + ': ' + e.error + '</li>';
+                        } else {
+                            html += '<li>' + e.empresa + ' - ' + e.urs + ' URs';
+                            html += ' <a href="/download/' + d.session_id + '/' + encodeURIComponent(e.empresa) + '" target="_blank" style="color:#1a73e8;">[baixar]</a></li>';
+                        }
+                    });
+                    html += '</ul>';
+                }
+                if (d.emails_enviados) {
+                    html += 'E-mail enviado para: <b>' + d.emails_enviados.join(', ') + '</b><br>';
+                }
+                if (d.email_errors)  { html += 'Erro no e-mail: ' + d.email_errors.join('; ') + '<br>'; }
+                if (d.email_aviso)   { html += 'Aviso: ' + d.email_aviso + '<br>'; }
+                html += '<br><a href="/download_all/' + d.session_id + '" style="color:#1a73e8; font-weight:600;">Baixar todos (.zip)</a>';
+
+                resBody.innerHTML = html;
+                res.style.display = 'block';
+            })
+            .catch(function(err) {
+                btn.disabled = false;
+                msg.textContent = 'Erro: ' + err.message;
+            });
+        }
+        </script>
+
         <!-- Step 2: Upload -->
 
 
@@ -17068,6 +17182,502 @@ def get_email_destinatarios():
 
     return jsonify({})
 
+
+
+# ==============================================================================
+# HERODASH FLOW — Cotação Rápida
+# Fluxo: CNPJ/raiz -> baixa agenda HD -> upload -> gera cotação taxa=0 -> envia email
+# ==============================================================================
+
+# Token do HeroDash — lido do arquivo salvo pelo plugin herodash-connector
+_HD_API_BASE   = 'https://herodash-api.picpay.com/api/v1'
+_HD_SELLER_SVC = 'https://herodash-seller-service-bff.picpay.com/api/v1'
+
+# Possíveis locais do arquivo de token salvo pelo plugin herodash-connector
+_HD_TOKEN_CANDIDATES = [
+    os.path.join(os.path.expanduser('~'), '.wolf', 'herodash-auth.json'),
+    os.path.join('C:\\', 'tmp', '.wolf', 'herodash-auth.json'),
+    os.path.join('/tmp', '.wolf', 'herodash-auth.json'),
+]
+
+def _hd_token():
+    """Retorna o JWT do HeroDash salvo pelo plugin herodash-connector.
+    
+    Suporta múltiplos formatos:
+    - {'token': 'eyJ...'}
+    - {'localStorage': {'token': 'eyJ...'}}
+    - storageState Playwright: {'origins': [{'localStorage': [{'name':'token','value':'eyJ...'}]}]}
+    """
+    for token_file in _HD_TOKEN_CANDIDATES:
+        if not os.path.exists(token_file):
+            continue
+        try:
+            with open(token_file, encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Formato 1: {'token': 'eyJ...'}
+            if isinstance(data.get('token'), str) and data['token'].startswith('eyJ'):
+                return data['token']
+            
+            # Formato 2: {'localStorage': {'token': 'eyJ...'}}
+            ls = data.get('localStorage')
+            if isinstance(ls, dict):
+                tok = ls.get('token')
+                if tok and isinstance(tok, str) and tok.startswith('eyJ'):
+                    return tok
+            
+            # Formato 3: storageState Playwright
+            # {'origins': [{'origin': 'https://...', 'localStorage': [{'name':'token','value':'eyJ...'}]}]}
+            origins = data.get('origins', [])
+            for origin in origins:
+                ls = origin.get('localStorage', [])
+                if isinstance(ls, list):
+                    for item in ls:
+                        if item.get('name') == 'token':
+                            val = item.get('value', '')
+                            if val and isinstance(val, str) and val.startswith('eyJ'):
+                                return val
+                elif isinstance(ls, dict):
+                    tok = ls.get('token')
+                    if tok and isinstance(tok, str) and tok.startswith('eyJ'):
+                        return tok
+        except Exception:
+            continue
+    return None
+
+def _hd_headers():
+    tok = _hd_token()
+    if not tok:
+        return None
+    return {'Authorization': f'Bearer {tok}', 'Content-Type': 'application/json'}
+
+def _hd_search_seller(cnpj_or_raiz):
+    """Busca o seller pelo CNPJ/raiz. Retorna lista [{id, name, ...}]."""
+    if http_requests is None:
+        return None, 'requests nao instalado'
+    hdrs = _hd_headers()
+    if not hdrs:
+        return None, 'Token HeroDash nao encontrado. Faça login no HeroDash primeiro.'
+    q = cnpj_or_raiz.replace('.', '').replace('/', '').replace('-', '')
+    try:
+        r = http_requests.get(
+            f'{_HD_API_BASE}/sellers/search',
+            params={'q': q},
+            headers=hdrs,
+            timeout=15
+        )
+        if r.status_code == 401:
+            return None, 'Token HeroDash expirado. Faça login novamente.'
+        r.raise_for_status()
+        return r.json(), None
+    except Exception as e:
+        return None, str(e)
+
+def _hd_gerar_agenda(cnpj_raiz, use_raiz=True):
+    """Solicita geração de agenda no HD. Retorna file_id ou erro."""
+    if http_requests is None:
+        return None, 'requests nao instalado'
+    hdrs = _hd_headers()
+    if not hdrs:
+        return None, 'Token HeroDash nao encontrado.'
+    cnpj_fmt = cnpj_raiz.replace('.', '').replace('/', '').replace('-', '')
+    payload = {'cnpjs': [cnpj_fmt], 'raiz': use_raiz}
+    try:
+        r = http_requests.post(
+            f'{_HD_API_BASE}/mesa-ar/agenda-sellers',
+            json=payload,
+            headers=hdrs,
+            timeout=20
+        )
+        if r.status_code == 401:
+            return None, 'Token HeroDash expirado.'
+        r.raise_for_status()
+        data = r.json()
+        return data.get('id') or data.get('file_id'), None
+    except Exception as e:
+        return None, str(e)
+
+def _hd_status_agenda(file_id):
+    """Verifica status da agenda. Retorna (status_str, download_url_or_None)."""
+    if http_requests is None:
+        return None, None
+    hdrs = _hd_headers()
+    if not hdrs:
+        return None, None
+    try:
+        r = http_requests.get(
+            f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}',
+            headers=hdrs,
+            timeout=15
+        )
+        r.raise_for_status()
+        data = r.json()
+        status = data.get('status', '').lower()
+        url = data.get('download_url') or data.get('url')
+        return status, url
+    except Exception:
+        return None, None
+
+def _hd_download_agenda(file_id):
+    """Baixa o CSV da agenda. Retorna (bytes_content, filename, error)."""
+    if http_requests is None:
+        return None, None, 'requests nao instalado'
+    hdrs = _hd_headers()
+    if not hdrs:
+        return None, None, 'Token HeroDash nao encontrado.'
+    # Tenta endpoint de download direto
+    try:
+        r = http_requests.get(
+            f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}/download',
+            headers=hdrs,
+            timeout=60
+        )
+        if r.status_code == 401:
+            return None, None, 'Token HeroDash expirado.'
+        r.raise_for_status()
+        fname = f'{file_id}.csv'
+        cd = r.headers.get('Content-Disposition', '')
+        if 'filename=' in cd:
+            fname = cd.split('filename=')[-1].strip().strip('"')
+        return r.content, fname, None
+    except Exception as e:
+        return None, None, str(e)
+
+@app.route('/herodash/cotacao_rapida', methods=['POST'])
+def hd_cotacao_rapida():
+    """
+    Fluxo completo em uma única chamada:
+      1. Gera agenda no HD pelo CNPJ/raiz
+      2. Aguarda processamento (polling)
+      3. Baixa o CSV
+      4. Faz upload no SimplificaÊ (cria sessão)
+      5. Gera cotação com taxa=0 e operador atual
+      6. (Opcional) Envia email para o cliente se email_cliente informado
+    Body JSON: {
+      cnpj: "17678232000104",        // CNPJ ou raiz (8 dígitos)
+      use_raiz: true,                // opcional, default true
+      operator_email: "cesar.oda@picpay.com",
+      email_cliente: "cliente@empresa.com",  // opcional
+      enviar_email: false            // opcional, default false
+    }
+    """
+    import time as _time
+
+    if http_requests is None:
+        return jsonify({'error': 'Módulo requests não instalado no servidor.'}), 500
+
+    data = request.json or {}
+    cnpj_raw       = data.get('cnpj', '').strip()
+    use_raiz       = data.get('use_raiz', True)
+    operator_email = data.get('operator_email', '').strip()
+    email_cliente  = data.get('email_cliente', '').strip()
+    enviar_email   = data.get('enviar_email', False)
+
+    if not cnpj_raw:
+        return jsonify({'error': 'CNPJ obrigatório'}), 400
+
+    hdrs = _hd_headers()
+    if not hdrs:
+        return jsonify({'error': 'Token HeroDash não encontrado. Faça login no HeroDash primeiro (Menu → HeroDash).'}), 401
+
+    # ----- PASSO 1: Solicitar geração da agenda -----
+    cnpj_clean = cnpj_raw.replace('.', '').replace('/', '').replace('-', '')
+    if use_raiz:
+        cnpj_clean = cnpj_clean[:8]  # raiz = 8 primeiros dígitos
+
+    payload_hd = {'cnpjs': [cnpj_clean], 'raiz': use_raiz}
+    try:
+        r1 = http_requests.post(
+            f'{_HD_API_BASE}/mesa-ar/agenda-sellers',
+            json=payload_hd,
+            headers=hdrs,
+            timeout=20
+        )
+        if r1.status_code == 401:
+            return jsonify({'error': 'Token HeroDash expirado. Faça login novamente.'}), 401
+        r1.raise_for_status()
+        file_id = r1.json().get('id') or r1.json().get('file_id')
+        if not file_id:
+            # HD pode retornar erro "já em processamento" com o file_id na mensagem
+            msg = r1.json().get('message', '')
+            import re as _re
+            m = _re.search(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', msg)
+            if m:
+                file_id = m.group(0)
+            else:
+                return jsonify({'error': f'Resposta inesperada do HeroDash: {r1.text[:300]}'}), 502
+    except http_requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Erro ao solicitar agenda ao HeroDash: {str(e)}'}), 502
+
+    # ----- PASSO 2: Polling até Finalizado (máx 3 min) -----
+    max_wait = 180
+    poll_interval = 8
+    elapsed = 0
+    download_url = None
+    status_final = 'processando'
+
+    while elapsed < max_wait:
+        _time.sleep(poll_interval)
+        elapsed += poll_interval
+        try:
+            rs = http_requests.get(
+                f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}',
+                headers=hdrs,
+                timeout=15
+            )
+            if rs.status_code in (404, 401):
+                break
+            rs.raise_for_status()
+            rs_data = rs.json()
+            status_final = (rs_data.get('status') or '').lower()
+            download_url = rs_data.get('download_url') or rs_data.get('url')
+            if 'finaliz' in status_final or 'complet' in status_final:
+                break
+            if 'erro' in status_final or 'fail' in status_final:
+                return jsonify({'error': f'Agenda falhou no HeroDash: {status_final}'}), 502
+        except Exception:
+            pass  # tenta de novo no próximo ciclo
+
+    if 'finaliz' not in status_final and 'complet' not in status_final:
+        return jsonify({'error': f'Agenda ainda não finalizou após {max_wait}s (status: {status_final}). Tente novamente em instantes.', 'file_id': file_id}), 202
+
+    # ----- PASSO 3: Baixar o CSV -----
+    csv_content = None
+    csv_filename = f'{file_id}.csv'
+    # Tenta endpoint de download
+    for dl_url in [
+        f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}/download',
+        download_url
+    ]:
+        if not dl_url:
+            continue
+        try:
+            rd = http_requests.get(dl_url, headers=hdrs, timeout=60)
+            if rd.status_code == 200 and rd.content:
+                csv_content = rd.content
+                cd = rd.headers.get('Content-Disposition', '')
+                if 'filename=' in cd:
+                    csv_filename = cd.split('filename=')[-1].strip().strip('"')
+                break
+        except Exception:
+            pass
+
+    if not csv_content:
+        return jsonify({'error': 'Não foi possível baixar o CSV da agenda. Verifique no HeroDash.', 'file_id': file_id}), 502
+
+    # ----- PASSO 4: Upload no SimplificaÊ -----
+    sid = datetime.now().strftime('%Y%m%d_%H%M%S')
+    fpath = os.path.join(UPLOAD_DIR, f'{sid}_0.csv')
+    with open(fpath, 'wb') as fout:
+        fout.write(csv_content)
+
+    records = parse_agenda(fpath)
+    if not records:
+        return jsonify({'error': 'CSV baixado, mas nenhum registro encontrado. Verifique o formato da agenda.'}), 422
+
+    raiz_map = load_raizes()
+    empresas = analyze_records(records, raiz_map)
+
+    emp_list = []
+    for name in sorted(empresas.keys(), key=lambda n: empresas[n]['valor'], reverse=True):
+        e = empresas[name]
+        emp_list.append({
+            'nome': name,
+            'cnpjs': len(e['cnpjs']),
+            'urs': e['urs'],
+            'valor': round(e['valor'], 2)
+        })
+
+    sess_data = {
+        'files': [fpath],
+        'file': fpath,
+        'empresas': emp_list,
+        'hd_file_id': file_id,
+        'hd_cnpj': cnpj_raw
+    }
+    with open(os.path.join(UPLOAD_DIR, f'{sid}.json'), 'w') as jf:
+        json.dump(sess_data, jf)
+
+    # ----- PASSO 5: Gerar cotação taxa=0 -----
+    taxa_pct   = 0.0
+    di_periodo = 0.1465
+    out_dir    = os.path.join(OUTPUT_DIR, sid)
+    os.makedirs(out_dir, exist_ok=True)
+
+    raiz_to_emp = {}
+    emp_raizes = {}
+    for raiz, nome in raiz_map.items():
+        nu = nome.upper().strip()
+        if nu not in emp_raizes:
+            emp_raizes[nu] = {'nome': nome, 'raizes': []}
+        emp_raizes[nu]['raizes'].append(raiz)
+    for nu, info in emp_raizes.items():
+        for raiz in info['raizes']:
+            raiz_to_emp[raiz] = info['nome']
+    for r in records:
+        raiz = r.get('raiz', '')
+        if raiz not in raiz_to_emp:
+            raiz_to_emp[raiz] = f'RAIZ_{raiz}'
+
+    empresa_records = {}
+    for r in records:
+        emp = raiz_to_emp.get(r.get('raiz', ''), 'OUTROS')
+        if emp not in empresa_records:
+            empresa_records[emp] = []
+        empresa_records[emp].append(r)
+
+    generated = []
+    for emp_nome, emp_recs in empresa_records.items():
+        safe = emp_nome.replace('/', '_').replace('\\', '_').replace(' ', '_')[:40]
+        emp_out = os.path.join(out_dir, safe)
+        os.makedirs(emp_out, exist_ok=True)
+        cotacao_path = os.path.join(emp_out, f'Cotacao_COMPLETO_{safe}.xlsx')
+        try:
+            generate_cotacao(
+                emp_recs, emp_nome, taxa_pct / 100.0, di_periodo,
+                {}, cotacao_path
+            )
+            generated.append({'empresa': emp_nome, 'safe_name': safe, 'urs': len(emp_recs)})
+        except Exception as ex:
+            generated.append({'empresa': emp_nome, 'safe_name': safe, 'error': str(ex)})
+
+    result = {
+        'session_id': sid,
+        'file_id': file_id,
+        'cnpj': cnpj_raw,
+        'records': len(records),
+        'empresas': generated,
+        'taxa_pct': taxa_pct
+    }
+
+    # ----- PASSO 6 (opcional): Enviar email -----
+    if enviar_email and email_cliente and generated:
+        email_errors = []
+        cfg = load_email_config()
+        if cfg.get('smtp_user') and cfg.get('smtp_pass'):
+            for emp_info in generated:
+                if emp_info.get('error'):
+                    continue
+                try:
+                    with app.test_request_context():
+                        from flask import request as _req
+                    send_payload = {
+                        'session_id': sid,
+                        'empresa': emp_info['empresa'],
+                        'safe_name': emp_info['safe_name'],
+                        'to_email': email_cliente,
+                        'taxa_pct': taxa_pct,
+                        'perfil_cliente': 'taxa_zero',
+                        'operator_email': operator_email,
+                        'urs': emp_info['urs'],
+                        'valor_total': sum(r.get('disponivel', 0) for r in empresa_records.get(emp_info['empresa'], [])),
+                        'valor_operavel': sum(r.get('disponivel', 0) for r in empresa_records.get(emp_info['empresa'], []))
+                    }
+                    # Chama a função de envio diretamente (sem HTTP)
+                    import smtplib
+                    from email.mime.multipart import MIMEMultipart
+                    from email.mime.text import MIMEText
+                    from email.mime.base import MIMEBase
+                    from email import encoders as _enc
+
+                    safe = emp_info['safe_name']
+                    emp_out = os.path.join(out_dir, safe)
+                    attach_path = None
+                    if os.path.exists(emp_out):
+                        for fname in sorted(os.listdir(emp_out)):
+                            if fname.startswith('Cotacao_') and fname.endswith('.xlsx'):
+                                attach_path = os.path.join(emp_out, fname)
+                                break
+
+                    msg = MIMEMultipart()
+                    msg['From'] = cfg['smtp_user']
+                    msg['To'] = email_cliente
+                    msg['Subject'] = f'Cotação Antecipação de Recebíveis — {emp_info["empresa"]} — {datetime.now().strftime("%d/%m/%Y")}'
+                    body = (
+                        f'Prezado(a),\n\n'
+                        f'Segue em anexo a cotação de antecipação de recebíveis para {emp_info["empresa"]}, '
+                        f'referente à agenda de hoje ({datetime.now().strftime("%d/%m/%Y")}).\n\n'
+                        f'Taxa: indicativa (a confirmar)\n\n'
+                        f'Em caso de dúvidas, entre em contato.\n\n'
+                        f'Atenciosamente,\n{operator_email or "Equipe AR PicPay"}'
+                    )
+                    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+                    if attach_path and os.path.exists(attach_path):
+                        with open(attach_path, 'rb') as af:
+                            part = MIMEBase('application', 'octet-stream')
+                            part.set_payload(af.read())
+                        _enc.encode_base64(part)
+                        part.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attach_path)}"')
+                        msg.attach(part)
+
+                    with smtplib.SMTP_SSL(cfg.get('smtp_host', 'smtp.gmail.com'), int(cfg.get('smtp_port', 465))) as srv:
+                        srv.login(cfg['smtp_user'], cfg['smtp_pass'])
+                        srv.sendmail(cfg['smtp_user'], [email_cliente], msg.as_bytes())
+
+                    result.setdefault('emails_enviados', []).append(email_cliente)
+                except Exception as ex:
+                    email_errors.append(str(ex))
+            if email_errors:
+                result['email_errors'] = email_errors
+        else:
+            result['email_aviso'] = 'Email não configurado no SimplificaÊ. Configure em Configurações → Email.'
+
+    return jsonify(result)
+
+
+@app.route('/herodash/status/<file_id>', methods=['GET'])
+def hd_status_agenda(file_id):
+    """Verifica status de uma agenda em processamento no HeroDash."""
+    hdrs = _hd_headers()
+    if not hdrs:
+        return jsonify({'error': 'Token HeroDash não encontrado.'}), 401
+    if http_requests is None:
+        return jsonify({'error': 'requests não instalado'}), 500
+    try:
+        r = http_requests.get(
+            f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}',
+            headers=hdrs, timeout=15
+        )
+        if r.status_code == 401:
+            return jsonify({'error': 'Token expirado'}), 401
+        r.raise_for_status()
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@app.route('/herodash/token_status', methods=['GET'])
+def hd_token_status():
+    """Diagnóstico do token HeroDash."""
+    tok = _hd_token()
+    if not tok:
+        candidates_info = []
+        for p in _HD_TOKEN_CANDIDATES:
+            candidates_info.append({'path': p, 'exists': os.path.exists(p)})
+        return jsonify({'ok': False, 'error': 'Token não encontrado', 'candidates': candidates_info})
+    # Decodificar payload JWT sem verificar assinatura
+    try:
+        import base64
+        parts = tok.split('.')
+        if len(parts) >= 2:
+            payload_b64 = parts[1] + '=='
+            payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode('utf-8'))
+            exp = payload.get('exp', 0)
+            import time as _t
+            now = int(_t.time())
+            valid = exp > now
+            return jsonify({
+                'ok': valid,
+                'expired': not valid,
+                'token_preview': tok[:40] + '...',
+                'exp': exp,
+                'expires_in_seconds': max(0, exp - now),
+                'sub': payload.get('sub'),
+            })
+    except Exception:
+        pass
+    return jsonify({'ok': True, 'token_preview': tok[:40] + '...'})
 
 
 if __name__ == '__main__':
