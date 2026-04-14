@@ -5521,9 +5521,11 @@ HTML_TEMPLATE = '''
         <!-- HeroDash: Cotacao Rapida -->
         <div class="card" id="card-hd-flow" style="border-left: 4px solid #1a73e8;">
             <h2 style="color:#1a73e8;">&#x26A1; Cotacao Rapida - HeroDash</h2>
+            <div id="hd-token-badge" style="display:inline-block; font-size:11px; padding:2px 10px; border-radius:10px; margin-bottom:8px; background:#e0e0e0; color:#666;">Verificando login HeroDash...</div>
             <p style="color:#555; font-size:13px; margin-bottom:12px;">
                 Informe o CNPJ (ou raiz com 8 digitos), baixa a agenda do HeroDash automaticamente,
-                gera a cotacao com taxa indicativa (0%) e envia para o cliente.
+                gera a cotacao com taxa indicativa (0%) e envia para o cliente.<br>
+                <span style="color:#888; font-size:11px;">Requer login no HeroDash Nitro (plugin herodash-connector) com usuario da Mesa AR.</span>
             </p>
             <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
                 <div class="form-group" style="flex:2; min-width:200px;">
@@ -5556,6 +5558,30 @@ HTML_TEMPLATE = '''
             </div>
         </div>
         <script>
+        // Verificar status do token HD ao carregar
+        (function() {
+            fetch('/herodash/token_status')
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                var badge = document.getElementById('hd-token-badge');
+                if (!badge) return;
+                if (d.ok) {
+                    var min = Math.round((d.expires_in_seconds || 0) / 60);
+                    badge.style.background = '#c8e6c9';
+                    badge.style.color = '#2e7d32';
+                    badge.textContent = 'HeroDash conectado (expira em ' + min + ' min)';
+                } else {
+                    badge.style.background = '#ffccbc';
+                    badge.style.color = '#bf360c';
+                    badge.textContent = 'HeroDash desconectado — faca login no plugin HeroDash do Nitro';
+                }
+            })
+            .catch(function() {
+                var badge = document.getElementById('hd-token-badge');
+                if (badge) { badge.textContent = 'Status HeroDash indisponivel'; }
+            });
+        })();
+
         function hdCotacaoRapida() {
             var cnpj = (document.getElementById('hd-cnpj').value || '').trim();
             if (!cnpj) { alert('Informe o CNPJ ou raiz.'); return; }
@@ -17394,7 +17420,11 @@ def hd_cotacao_rapida():
             timeout=20
         )
         if r1.status_code == 401:
-            return jsonify({'error': 'Token HeroDash expirado. Faça login novamente.'}), 401
+            return jsonify({'error': 'Token HeroDash expirado. Faça login novamente no plugin HeroDash do Nitro.'}), 401
+        if r1.status_code == 404:
+            return jsonify({'error': 'Sem acesso à Mesa AR no HeroDash. O usuário logado precisa ter perfil de operador da Mesa AR. Peça ao operador (Cesar, Deyvis) para fazer login no plugin HeroDash do Nitro nesta máquina.'}), 403
+        if r1.status_code == 403:
+            return jsonify({'error': 'Sem permissão para gerar agenda no HeroDash. Verifique se o usuário logado tem acesso à Mesa AR.'}), 403
         r1.raise_for_status()
         file_id = r1.json().get('id') or r1.json().get('file_id')
         if not file_id:
