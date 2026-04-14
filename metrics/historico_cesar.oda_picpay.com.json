@@ -1,5 +1,19 @@
 [
   {
+    "timestamp": "14/04/2026 15:09",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Completa",
+    "empresas": [
+      "+55 Moveis"
+    ],
+    "total_urs": 89,
+    "total_valor": 1017098.82,
+    "taxa": 1.89,
+    "di_periodo": 0.1465,
+    "session_id": "20260414_150844"
+  },
+  {
     "timestamp": "14/04/2026 11:02",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
