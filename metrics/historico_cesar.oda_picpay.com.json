@@ -3,6 +3,26 @@
     "timestamp": "14/04/2026 09:56",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
+    "tipo": "Personalizada - MASH ONLINE COMERCIO DE VESTUARIO LTDA",
+    "empresas": [
+      "MASH ONLINE COMERCIO DE VESTUARIO LTDA"
+    ],
+    "total_urs": 400,
+    "total_valor": 965551.35,
+    "taxa": 1.43,
+    "di_periodo": 0.1465,
+    "filtros": {
+      "valor_alvo": 0,
+      "adquirente": "Getnet,PicPay,Picpay",
+      "arranjo": "ACC,ECC,MCC,VCC",
+      "periodo": "20/04/2026 a 16/10/2026"
+    },
+    "session_id": "20260414_095623"
+  },
+  {
+    "timestamp": "14/04/2026 09:56",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
     "tipo": "Completa",
     "empresas": [
       "MASH ONLINE COMERCIO DE VESTUARIO LTDA"
