@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 
 
@@ -6,7 +6,7 @@
 
 
 
-SimplificaÃŠ Web App - Prototipo MVP
+SimplificaÊ Web App - Prototipo MVP
 
 
 
@@ -45,12 +45,6 @@ import zipfile
 
 
 import time
-
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders as _email_encoders
 
 
 
@@ -200,14 +194,14 @@ import base64
 
 import secrets as py_secrets
 
-# Telemetria de uso â€” importaÃ§Ã£o silenciosa, nunca bloqueia o app
+# Telemetria de uso — importação silenciosa, nunca bloqueia o app
 try:
     import usage_log as _usage_log
     _TELEMETRIA_OK = True
 except ImportError:
     _TELEMETRIA_OK = False
 
-# Auto-update â€” importaÃ§Ã£o silenciosa
+# Auto-update — importação silenciosa
 try:
     import updater as _updater
     _UPDATER_OK = True
@@ -227,8 +221,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RAIZES_PATH = os.path.join(BASE_DIR, 'raizes_conhecidas.json')
 
 # Quando rodando como .exe (PyInstaller frozen), BASE_DIR aponta para
-# _internal/ que Ã© temporÃ¡rio e some entre execuÃ§Ãµes do processo.
-# ~/SimplificaE_data Ã© o diretÃ³rio estÃ¡vel para uploads, outputs e dados.
+# _internal/ que é temporário e some entre execuções do processo.
+# ~/SimplificaE_data é o diretório estável para uploads, outputs e dados.
 if getattr(sys, 'frozen', False):
     _DATA_DIR = os.path.join(os.path.expanduser('~'), 'SimplificaE_data')
 else:
@@ -1312,7 +1306,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
     # ------------------------------------------------------------------
 
-    # ABA ANALITICO  (escrita sequencial: premissas â†’ headers â†’ dados â†’ total)
+    # ABA ANALITICO  (escrita sequencial: premissas → headers → dados → total)
 
     # ------------------------------------------------------------------
 
@@ -1360,7 +1354,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
 
 
-    # Linha 3: valores das premissas (pre-calculados â€” escrita sequencial OK)
+    # Linha 3: valores das premissas (pre-calculados — escrita sequencial OK)
 
     ws_a.write_formula(2, pcs,     '=(1+M3)^(1/30)-1',   pre_pl)
 
@@ -1420,7 +1414,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
 
 
-    # Dados â€” write_row para linhas normais, write individual para inelegiveis
+    # Dados — write_row para linhas normais, write individual para inelegiveis
 
     for i, row in enumerate(rows_data):
 
@@ -1566,7 +1560,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
 
 
-    # Linha de totais (linha 13 = row 12) â€” pre-calculada
+    # Linha de totais (linha 13 = row 12) — pre-calculada
 
     sums = []
 
@@ -1970,7 +1964,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-    # M3 = taxa nominal referenciando Consolidado!D5 (fonte unica da taxa â€” altere la, reflete aqui)
+    # M3 = taxa nominal referenciando Consolidado!D5 (fonte unica da taxa — altere la, reflete aqui)
 
 
 
@@ -2514,7 +2508,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-    ws_c['B2'] = f'CotaÃ§Ã£o de AntecipaÃ§Ã£o de RecebÃ­veis - {today.strftime("%d/%m/%Y")}'
+    ws_c['B2'] = f'Cotação de Antecipação de Recebíveis - {today.strftime("%d/%m/%Y")}'
 
 
 
@@ -3221,7 +3215,7 @@ def generate_selecao(records, taxa_mensal, operator_email, seller_map, output_pa
 
             disp = r.get('disponivel', 0)
 
-            # Se seleÃ§Ã£o parcial foi aplicada (valor_alvo), usar o valor cedido parcial
+            # Se seleção parcial foi aplicada (valor_alvo), usar o valor cedido parcial
             requested = r.get('_valor_cedido', disp)
 
             writer.writerow([
@@ -3576,7 +3570,7 @@ def get_token_via_cli():
 
 
     """Tenta obter token OAuth via Databricks CLI.
-    Busca o CLI em mÃºltiplos locais e tenta todos os profiles configurados.
+    Busca o CLI em múltiplos locais e tenta todos os profiles configurados.
     """
 
     import subprocess
@@ -3612,11 +3606,11 @@ def get_token_via_cli():
             for _s in _cfg.sections():
                 _host = _cfg.get(_s, 'host', fallback='')
                 if 'picpay' in _host or 'databricks' in _host:
-                    _profiles.insert(0, _s)  # profiles PicPay tÃªm prioridade
+                    _profiles.insert(0, _s)  # profiles PicPay têm prioridade
         except Exception:
             pass
 
-    # --- Tentar cada CLI Ã— cada profile ---
+    # --- Tentar cada CLI × cada profile ---
     for cli in cli_candidates:
         for profile in _profiles:
             try:
@@ -4968,7 +4962,7 @@ HTML_TEMPLATE = '''
 
 
 
-    <title>SimplificaÃŠ ðŸ­ - AntecipaÃ§Ã£o de RecebÃ­veis</title>
+    <title>SimplificaÊ 🏭 - Antecipação de Recebíveis</title>
 
 
 
@@ -5260,11 +5254,11 @@ HTML_TEMPLATE = '''
 
 
 
-            <h1>ðŸ­ SimplificaÃŠ</h1>
+            <h1>🏭 SimplificaÊ</h1>
 
 
 
-            <div class="subtitle">CotaÃ§Ã£o de AntecipaÃ§Ã£o de RecebÃ­veis</div>
+            <div class="subtitle">Cotação de Antecipação de Recebíveis</div>
 
 
 
@@ -5284,11 +5278,11 @@ HTML_TEMPLATE = '''
 
 
 
-        <div class="tab active" onclick="switchTab('cotacao')">ðŸ­ CotaÃ§Ã£o</div>
+        <div class="tab active" onclick="switchTab('cotacao')">🏭 Cotação</div>
 
 
 
-        <div class="tab" onclick="switchTab('historico')">ðŸ“œ HistÃ³rico</div>
+        <div class="tab" onclick="switchTab('historico')">📜 Histórico</div>
 
 
 
@@ -5300,7 +5294,7 @@ HTML_TEMPLATE = '''
 
 
 
-        <!-- TAB: CotaÃ§Ã£o -->
+        <!-- TAB: Cotação -->
 
 
 
@@ -5328,7 +5322,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <label>Quem Ã© o operador?</label>
+                    <label>Quem é o operador?</label>
 
 
 
@@ -5432,7 +5426,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    âœ‰ï¸ E-mail do Operador (para envio de cotaÃ§Ãµes)
+                    ✉️ E-mail do Operador (para envio de cotações)
 
 
 
@@ -5508,7 +5502,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    Gere o App Password em: myaccount.google.com > SeguranÃ§a > Senhas de app
+                    Gere o App Password em: myaccount.google.com > Segurança > Senhas de app
 
 
 
@@ -5529,138 +5523,162 @@ HTML_TEMPLATE = '''
             <h2 style="color:#1a73e8;">&#x26A1; Cotacao Rapida - HeroDash</h2>
             <div id="hd-token-badge" style="display:inline-block; font-size:11px; padding:2px 10px; border-radius:10px; margin-bottom:8px; background:#e0e0e0; color:#666;">Verificando login HeroDash...</div>
             <p style="color:#555; font-size:13px; margin-bottom:12px;">
-                Informe o CNPJ (ou raiz com 8 digitos), baixa a agenda do HeroDash automaticamente,
-                gera a cotacao com taxa indicativa (0%) e envia para o cliente.<br>
-                <span style="color:#888; font-size:11px;">Requer login no HeroDash Nitro (plugin herodash-connector) com usuario da Mesa AR.</span>
+                Informe as raizes ou CNPJs, configure os e-mails por empresa e gere cotacoes indicativas (taxa 0%).<br>
+                <span style="color:#888; font-size:11px;">Maximo 5 raizes por requisicao ao HeroDash. Mais de 5 serao processadas em lotes automaticamente.</span>
             </p>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-                <div class="form-group" style="flex:2; min-width:200px;">
-                    <label>CNPJ ou Raiz do CNPJ</label>
-                    <input type="text" id="hd-cnpj" placeholder="17678232000104 ou 17678232" maxlength="18">
-                </div>
-                <div class="form-group" style="flex:2; min-width:200px;">
-                    <label>E-mail do cliente <span style="color:#999">(opcional)</span></label>
-                    <input type="email" id="hd-email-cliente" placeholder="cliente@empresa.com">
-                </div>
-                <div class="form-group" style="flex:0 0 auto; display:flex; align-items:center; gap:8px; padding-top:22px;">
-                    <input type="checkbox" id="hd-enviar-email" style="width:16px;height:16px;">
-                    <label for="hd-enviar-email" style="margin:0; cursor:pointer;">Enviar e-mail</label>
-                </div>
-                <div class="form-group" style="flex:0 0 auto; display:flex; align-items:center; gap:8px; padding-top:22px;">
-                    <input type="checkbox" id="hd-use-raiz" checked style="width:14px;height:14px;">
-                    <label for="hd-use-raiz" style="margin:0; cursor:pointer;">Buscar por raiz</label>
-                </div>
-            </div>
-            <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <button id="btn-hd-cotacao" onclick="hdCotacaoRapida()"
-                        style="background:#1a73e8; color:#fff; border:none; padding:10px 24px;
-                               border-radius:6px; font-size:15px; cursor:pointer; font-weight:600;">
-                    &#x26A1; Gerar Cotacao
+            <div style="margin-bottom:10px; overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;" id="hd-empresas-table">
+                    <thead>
+                        <tr style="background:#e3f2fd;">
+                            <th style="padding:7px 10px;text-align:left;border:1px solid #ccc;width:190px;">Raiz / CNPJ</th>
+                            <th style="padding:7px 10px;text-align:left;border:1px solid #ccc;">E-mails do cliente <span style="color:#999;font-weight:normal;">(opcional)</span></th>
+                            <th style="padding:7px 10px;border:1px solid #ccc;width:36px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="hd-empresas-body">
+                        <tr id="hd-row-0">
+                            <td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">
+                                <input type="text" class="hd-cnpj-input" placeholder="17678232" maxlength="18"
+                                    onblur="var v=this.value.replace(/[.\/-]/g,'').trim();if(v&&document.getElementById('hd-use-raiz').checked&&v.length>0&&v.length<8){v=v.padStart(8,'0');}this.value=v;"
+                                    style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
+                            </td>
+                            <td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">
+                                <div class="hd-emails-list">
+                                    <div style="display:flex;gap:6px;margin-bottom:4px;">
+                                        <input type="email" class="hd-email-input" placeholder="cliente@empresa.com"
+                                            style="flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;">
+                                        <button type="button" onclick="hdRemoveEmail(this)" style="background:none;border:none;color:#999;cursor:pointer;font-size:16px;padding:0 4px;">&#x2715;</button>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="hdAddEmail(this)"
+                                    style="font-size:11px;color:#1a73e8;background:none;border:none;cursor:pointer;padding:0;">+ adicionar e-mail</button>
+                            </td>
+                            <td style="padding:6px;border:1px solid #e0e0e0;text-align:center;vertical-align:middle;">
+                                <button type="button" onclick="hdRemoveRow(this)"
+                                    style="background:none;border:none;color:#e53935;cursor:pointer;font-size:18px;line-height:1;">&#x2715;</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" onclick="hdAddRow()"
+                    style="margin-top:6px;font-size:12px;color:#1a73e8;background:none;border:1px dashed #90caf9;border-radius:4px;padding:5px 14px;cursor:pointer;">
+                    + Adicionar empresa
                 </button>
-                <span id="hd-status-msg" style="font-size:13px; color:#555;"></span>
             </div>
-            <div id="hd-result" style="margin-top:14px; display:none;">
-                <div style="padding:10px; background:#e8f5e9; border-radius:6px; font-size:13px;" id="hd-result-body"></div>
+            <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                    <input type="checkbox" id="hd-use-raiz" checked style="width:14px;height:14px;"> Buscar por raiz
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                    <input type="checkbox" id="hd-enviar-email" style="width:14px;height:14px;"> Enviar e-mail para cada empresa
+                </label>
+                <button id="btn-hd-cotacao" onclick="hdCotacaoRapida()"
+                        style="background:#1a73e8;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">
+                    &#x26A1; Gerar Cotacoes
+                </button>
+                <span id="hd-status-msg" style="font-size:13px;color:#555;"></span>
+            </div>
+            <div id="hd-result" style="margin-top:14px;display:none;">
+                <div style="padding:12px;background:#e8f5e9;border-radius:6px;font-size:13px;" id="hd-result-body"></div>
             </div>
         </div>
         <script>
-        // Verificar status do token HD ao carregar
-        (function() {
-            fetch('/herodash/token_status')
-            .then(function(r) { return r.json(); })
-            .then(function(d) {
-                var badge = document.getElementById('hd-token-badge');
-                if (!badge) return;
-                if (d.ok) {
-                    var min = Math.round((d.expires_in_seconds || 0) / 60);
-                    badge.style.background = '#c8e6c9';
-                    badge.style.color = '#2e7d32';
-                    badge.textContent = 'HeroDash conectado (expira em ' + min + ' min)';
-                } else {
-                    badge.style.background = '#ffccbc';
-                    badge.style.color = '#bf360c';
-                    badge.textContent = 'HeroDash desconectado â€” faca login no plugin HeroDash do Nitro';
-                }
-            })
-            .catch(function() {
-                var badge = document.getElementById('hd-token-badge');
-                if (badge) { badge.textContent = 'Status HeroDash indisponivel'; }
-            });
+        (function(){
+            fetch('/herodash/token_status').then(function(r){return r.json();}).then(function(d){
+                var b=document.getElementById('hd-token-badge'); if(!b) return;
+                if(d.ok){var m=Math.round((d.expires_in_seconds||0)/60);b.style.background='#c8e6c9';b.style.color='#2e7d32';b.textContent='HeroDash conectado (expira em '+m+' min)';}
+                else{b.style.background='#ffccbc';b.style.color='#bf360c';b.textContent='HeroDash desconectado - faca login no plugin HeroDash do Nitro';}
+            }).catch(function(){var b=document.getElementById('hd-token-badge');if(b)b.textContent='Status HeroDash indisponivel';});
         })();
-
-        function hdCotacaoRapida() {
-            var cnpj = (document.getElementById('hd-cnpj').value || '').trim();
-            if (!cnpj) { alert('Informe o CNPJ ou raiz.'); return; }
-            var emailCliente = (document.getElementById('hd-email-cliente').value || '').trim();
-            var enviarEmail  = document.getElementById('hd-enviar-email').checked;
-            var useRaiz      = document.getElementById('hd-use-raiz').checked;
-            // pega email do operador do step 1
-            var opEl = document.getElementById('operador');
-            var opEmail = opEl ? opEl.value : '';
-            if (opEmail === 'outro') {
-                var opCustom = document.getElementById('operador-email');
-                opEmail = opCustom ? opCustom.value : '';
-            }
-
-            var btn = document.getElementById('btn-hd-cotacao');
-            var msg = document.getElementById('hd-status-msg');
-            var res = document.getElementById('hd-result');
-            var resBody = document.getElementById('hd-result-body');
-
-            btn.disabled = true;
-            msg.textContent = 'Solicitando agenda ao HeroDash... (pode levar ate 2 min)';
-            res.style.display = 'none';
-
-            fetch('/herodash/cotacao_rapida', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    cnpj: cnpj,
-                    use_raiz: useRaiz,
-                    operator_email: opEmail,
-                    email_cliente: emailCliente,
-                    enviar_email: (enviarEmail && !!emailCliente)
-                })
+        var _hdRowCount=1;
+        function hdAddRow(){
+            var idx=_hdRowCount++; var tbody=document.getElementById('hd-empresas-body');
+            var tr=document.createElement('tr'); tr.id='hd-row-'+idx;
+            tr.innerHTML='<td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">'
+                +'<input type="text" class="hd-cnpj-input" placeholder="17678232" maxlength="18"'
+                +' onblur="var v=this.value.replace(/[.\\/\\-]/g,\'\').trim();if(v&&document.getElementById(\'hd-use-raiz\').checked&&v.length>0&&v.length<8){v=v.padStart(8,\'0\');}this.value=v;"'
+                +' style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></td>'
+                +'<td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">'
+                +'<div class="hd-emails-list"><div style="display:flex;gap:6px;margin-bottom:4px;">'
+                +'<input type="email" class="hd-email-input" placeholder="cliente@empresa.com"'
+                +' style="flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;">'
+                +'<button type="button" onclick="hdRemoveEmail(this)" style="background:none;border:none;color:#999;cursor:pointer;font-size:16px;padding:0 4px;">&#x2715;</button>'
+                +'</div></div>'
+                +'<button type="button" onclick="hdAddEmail(this)" style="font-size:11px;color:#1a73e8;background:none;border:none;cursor:pointer;padding:0;">+ adicionar e-mail</button>'
+                +'</td><td style="padding:6px;border:1px solid #e0e0e0;text-align:center;vertical-align:middle;">'
+                +'<button type="button" onclick="hdRemoveRow(this)" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:18px;line-height:1;">&#x2715;</button></td>';
+            tbody.appendChild(tr);
+        }
+        function hdRemoveRow(btn){
+            var tr=btn.closest('tr'); var tbody=document.getElementById('hd-empresas-body');
+            if(tbody.rows.length>1){tr.remove();}else{tr.querySelectorAll('input').forEach(function(i){i.value='';});}
+        }
+        function hdAddEmail(btn){
+            var list=btn.previousElementSibling;
+            var div=document.createElement('div'); div.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
+            div.innerHTML='<input type="email" class="hd-email-input" placeholder="cliente@empresa.com"'
+                +' style="flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;">'
+                +'<button type="button" onclick="hdRemoveEmail(this)" style="background:none;border:none;color:#999;cursor:pointer;font-size:16px;padding:0 4px;">&#x2715;</button>';
+            list.appendChild(div);
+        }
+        function hdRemoveEmail(btn){
+            var div=btn.parentElement; var list=div.parentElement;
+            if(list.children.length>1){div.remove();}else{div.querySelector('input').value='';}
+        }
+        function hdColetarEmpresas(){
+            var rows=document.querySelectorAll('#hd-empresas-body tr'); var empresas=[];
+            rows.forEach(function(tr){
+                var inp=tr.querySelector('.hd-cnpj-input');
+                var cnpj=inp?(inp.value||'').trim():''; if(!cnpj) return;
+                var emails=[];
+                tr.querySelectorAll('.hd-email-input').forEach(function(i){var v=i.value.trim();if(v)emails.push(v);});
+                empresas.push({cnpj:cnpj,emails:emails});
+            });
+            return empresas;
+        }
+        function hdCotacaoRapida(){
+            var empresas=hdColetarEmpresas();
+            if(!empresas.length){alert('Informe pelo menos um CNPJ ou raiz.');return;}
+            var useRaiz=document.getElementById('hd-use-raiz').checked;
+            var enviarEmail=document.getElementById('hd-enviar-email').checked;
+            var opEl=document.getElementById('operador'); var opEmail=opEl?opEl.value:'';
+            if(opEmail==='outro'){var oc=document.getElementById('operador-email');opEmail=oc?oc.value:'';}
+            var btn=document.getElementById('btn-hd-cotacao');
+            var msg=document.getElementById('hd-status-msg');
+            var res=document.getElementById('hd-result');
+            var resBody=document.getElementById('hd-result-body');
+            btn.disabled=true;
+            msg.textContent='Processando '+empresas.length+' empresa(s)... aguarde';
+            res.style.display='none';
+            fetch('/herodash/cotacao_rapida',{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({empresas:empresas,use_raiz:useRaiz,operator_email:opEmail,enviar_email:enviarEmail})
             })
-            .then(function(r) { return r.json().then(function(d) { d._status = r.status; return d; }); })
-            .then(function(d) {
-                btn.disabled = false;
-                if (d.error) {
-                    msg.textContent = 'Erro: ' + d.error;
-                    return;
-                }
-                msg.textContent = 'Cotacao gerada com sucesso!';
-
-                var html = '<b>Cotacao Rapida HD</b><br><br>';
-                html += 'Arquivo HD: <code>' + (d.file_id || '-') + '</code><br>';
-                html += 'Registros: <b>' + d.records + '</b> URs | Taxa: <b>' + d.taxa_pct + '%</b><br><br>';
-
-                if (d.empresas && d.empresas.length > 0) {
-                    html += '<b>Empresas geradas:</b><ul style="margin:6px 0 8px 16px;">';
-                    d.empresas.forEach(function(e) {
-                        if (e.error) {
-                            html += '<li>ERRO: ' + e.empresa + ': ' + e.error + '</li>';
-                        } else {
-                            html += '<li>' + e.empresa + ' - ' + e.urs + ' URs';
-                            html += ' <a href="/download/' + d.session_id + '/' + encodeURIComponent(e.empresa) + '" target="_blank" style="color:#1a73e8;">[baixar]</a></li>';
+            .then(function(r){return r.json().then(function(d){d._status=r.status;return d;});})
+            .then(function(d){
+                btn.disabled=false;
+                if(d.error){msg.textContent='Erro: '+d.error;return;}
+                msg.textContent='Cotacoes geradas com sucesso!';
+                var html='<b>Cotacao Rapida HD</b><br><br>';
+                html+='Registros totais: <b>'+d.records+'</b> URs | Taxa: <b>'+d.taxa_pct+'%</b><br><br>';
+                if(d.empresas&&d.empresas.length>0){
+                    html+='<b>Empresas:</b><ul style="margin:6px 0 8px 16px;">';
+                    d.empresas.forEach(function(e){
+                        if(e.error){html+='<li style="color:#c62828;">ERRO '+e.empresa+': '+e.error+'</li>';}
+                        else{
+                            html+='<li>'+e.empresa+' - '+e.urs+' URs';
+                            html+=' <a href="/download/'+d.session_id+'/'+encodeURIComponent(e.empresa)+'" target="_blank" style="color:#1a73e8;">[baixar]</a>';
+                            if(e.email_enviado) html+=' <span style="color:#2e7d32;">&#10003; e-mail enviado</span>';
+                            if(e.email_erro)    html+=' <span style="color:#c62828;">&#x26A0; '+e.email_erro+'</span>';
+                            html+='</li>';
                         }
                     });
-                    html += '</ul>';
+                    html+='</ul>';
                 }
-                if (d.emails_enviados) {
-                    html += 'E-mail enviado para: <b>' + d.emails_enviados.join(', ') + '</b><br>';
-                }
-                if (d.email_errors)  { html += 'Erro no e-mail: ' + d.email_errors.join('; ') + '<br>'; }
-                if (d.email_aviso)   { html += 'Aviso: ' + d.email_aviso + '<br>'; }
-                html += '<br><a href="/download_all/' + d.session_id + '" style="color:#1a73e8; font-weight:600;">Baixar todos (.zip)</a>';
-
-                resBody.innerHTML = html;
-                res.style.display = 'block';
+                html+='<a href="/download_all/'+d.session_id+'" style="color:#1a73e8;font-weight:600;">Baixar todos (.zip)</a>';
+                resBody.innerHTML=html; res.style.display='block';
             })
-            .catch(function(err) {
-                btn.disabled = false;
-                msg.textContent = 'Erro: ' + err.message;
-            });
+            .catch(function(err){btn.disabled=false;msg.textContent='Erro: '+err.message;});
         }
         </script>
 
@@ -5680,7 +5698,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <div class="icon">ðŸ“</div>
+                <div class="icon">📁</div>
 
 
 
@@ -5688,7 +5706,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <p style="font-size: 12px; color: #9E9E9E;">Aceita mÃºltiplos arquivos | Separador ; ou , | Encoding UTF-8 ou Latin-1</p>
+                <p style="font-size: 12px; color: #9E9E9E;">Aceita múltiplos arquivos | Separador ; ou , | Encoding UTF-8 ou Latin-1</p>
 
 
 
@@ -5744,7 +5762,7 @@ HTML_TEMPLATE = '''
 
 
 
-            <h2>4. ParÃ¢metros</h2>
+            <h2>4. Parâmetros</h2>
 
 
 
@@ -5774,7 +5792,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <label>DI PerÃ­odo (% a.a.)</label>
+                    <label>DI Período (% a.a.)</label>
 
 
 
@@ -5836,7 +5854,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <div id="taxas-empresas-list"><p style="font-size:12px;color:#E65100;background:#FFF3E0;padding:8px;border-radius:4px;margin:0;">âš ï¸ Defina as taxas aqui <strong>antes</strong> de clicar em â€œGerar CotaÃ§Ãµesâ€. ApÃ³s a primeira geraÃ§Ã£o, as empresas aparecerÃ£o aqui para ajuste.</p></div>
+                <div id="taxas-empresas-list"><p style="font-size:12px;color:#E65100;background:#FFF3E0;padding:8px;border-radius:4px;margin:0;">⚠️ Defina as taxas aqui <strong>antes</strong> de clicar em “Gerar Cotações”. Após a primeira geração, as empresas aparecerão aqui para ajuste.</p></div>
 
 
 
@@ -5856,15 +5874,15 @@ HTML_TEMPLATE = '''
 
 
 
-                    <label style="cursor:pointer;"><input type="checkbox" id="gen-cotacao" checked> CotaÃ§Ã£o ElegÃ­veis (XLSX)</label>
+                    <label style="cursor:pointer;"><input type="checkbox" id="gen-cotacao" checked> Cotação Elegíveis (XLSX)</label>
 
 
 
-                    <label style="cursor:pointer;"><input type="checkbox" id="gen-selecao" checked> SeleÃ§Ã£o de URs (CSV)</label>
+                    <label style="cursor:pointer;"><input type="checkbox" id="gen-selecao" checked> Seleção de URs (CSV)</label>
 
 
 
-                    <label style="cursor:pointer;" title="Gera tambÃ©m a cotaÃ§Ã£o com todos os sellers, marcando inlegÃ­veis em vermelho"><input type="checkbox" id="gen-completo" checked> CotaÃ§Ã£o Completa c/ IneligÃ­veis (XLSX)</label>
+                    <label style="cursor:pointer;" title="Gera também a cotação com todos os sellers, marcando inlegíveis em vermelho"><input type="checkbox" id="gen-completo" checked> Cotação Completa c/ Ineligíveis (XLSX)</label>
 
 
 
@@ -5884,7 +5902,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    ðŸ­ Gerar Cotacoes (Todas as Empresas)
+                    🏭 Gerar Cotacoes (Todas as Empresas)
 
 
 
@@ -5908,7 +5926,7 @@ HTML_TEMPLATE = '''
 
 
 
-            <h2>5. CotaÃ§Ãµes Geradas</h2>
+            <h2>5. Cotações Geradas</h2>
 
 
 
@@ -5920,7 +5938,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <button class="btn btn-download" onclick="downloadAll()">â¬‡ï¸ Download Tudo (ZIP)</button>
+                <button class="btn btn-download" onclick="downloadAll()">⬇️ Download Tudo (ZIP)</button>
 
                 <button id="btn-send-all" onclick="openSendAllModal()" style="background:#E3F2FD;border:1px solid #90CAF9;color:#1565C0;padding:8px 18px;font-size:13px;border-radius:6px;cursor:pointer;display:none;">&#9993; Enviar todos por e-mail</button>
 
@@ -5942,7 +5960,7 @@ HTML_TEMPLATE = '''
 
 
 
-            <h2>6. CotaÃ§Ã£o Personalizada</h2>
+            <h2>6. Cotação Personalizada</h2>
 
 
 
@@ -6026,7 +6044,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <label>Adquirente <span style="color:#9E9E9E;font-size:11px;font-weight:normal;">(mÃºltipla seleÃ§Ã£o)</span></label>
+                    <label>Adquirente <span style="color:#9E9E9E;font-size:11px;font-weight:normal;">(múltipla seleção)</span></label>
 
 
 
@@ -6050,7 +6068,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <label>Arranjo <span style="color:#9E9E9E;font-size:11px;font-weight:normal;">(mÃºltipla seleÃ§Ã£o)</span></label>
+                    <label>Arranjo <span style="color:#9E9E9E;font-size:11px;font-weight:normal;">(múltipla seleção)</span></label>
 
 
 
@@ -6136,9 +6154,9 @@ HTML_TEMPLATE = '''
 
                     <div style="display:flex;gap:6px;margin-top:4px;">
 
-                        <button type="button" onclick="selectAllCnpjs(true)" style="flex:1;font-size:11px;padding:3px;border:1px solid #E0E0E0;border-radius:4px;background:white;cursor:pointer;">âœ“ Todos</button>
+                        <button type="button" onclick="selectAllCnpjs(true)" style="flex:1;font-size:11px;padding:3px;border:1px solid #E0E0E0;border-radius:4px;background:white;cursor:pointer;">✓ Todos</button>
 
-                        <button type="button" onclick="selectAllCnpjs(false)" style="flex:1;font-size:11px;padding:3px;border:1px solid #E0E0E0;border-radius:4px;background:white;cursor:pointer;">â–¡ Nenhum</button>
+                        <button type="button" onclick="selectAllCnpjs(false)" style="flex:1;font-size:11px;padding:3px;border:1px solid #E0E0E0;border-radius:4px;background:white;cursor:pointer;">□ Nenhum</button>
 
                     </div>
 
@@ -6148,7 +6166,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <label>Datas de LiquidaÃ§Ã£o</label>
+                <label>Datas de Liquidação</label>
 
 
 
@@ -6248,7 +6266,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <button class="btn btn-secondary" onclick="generateCustom()">ðŸ“‹ Gerar Personalizada</button>
+                <button class="btn btn-secondary" onclick="generateCustom()">📋 Gerar Personalizada</button>
 
 
 
@@ -6268,7 +6286,7 @@ HTML_TEMPLATE = '''
 
 
 
-        <!-- TAB: HistÃ³rico -->
+        <!-- TAB: Histórico -->
 
 
 
@@ -6280,11 +6298,11 @@ HTML_TEMPLATE = '''
 
 
 
-                <h2>ðŸ“œ HistÃ³rico de CotaÃ§Ãµes</h2>
+                <h2>📜 Histórico de Cotações</h2>
 
 
 
-                <p style="color:#757575;margin-bottom:16px;">Registro de todas as cotaÃ§Ãµes geradas por todos os operadores.</p>
+                <p style="color:#757575;margin-bottom:16px;">Registro de todas as cotações geradas por todos os operadores.</p>
 
 
 
@@ -6292,7 +6310,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <button class="btn btn-secondary" onclick="loadHistory()" style="margin-right:8px;">ðŸ”„ Atualizar</button>
+                    <button class="btn btn-secondary" onclick="loadHistory()" style="margin-right:8px;">🔄 Atualizar</button>
 
 
 
@@ -6370,10 +6388,10 @@ HTML_TEMPLATE = '''
                 btn.textContent = 'Baixando... ' + pct + '%';
                 btn.disabled = true;
             } else if (status === 'ready') {
-                btn.textContent = 'âœ… Reiniciando...';
+                btn.textContent = '✅ Reiniciando...';
                 btn.disabled = true;
             } else if (status === 'error') {
-                btn.textContent = 'âŒ Erro â€” tente novamente';
+                btn.textContent = '❌ Erro — tente novamente';
                 btn.disabled = false;
             }
         }
@@ -6402,9 +6420,9 @@ HTML_TEMPLATE = '''
                             _updateBannerProgress(s.download_progress || 0, s.download_status || '');
                             if (s.download_status === 'ready') {
                                 clearInterval(poll);
-                                // App vai reiniciar sozinho via update.bat â€” avisa operador
+                                // App vai reiniciar sozinho via update.bat — avisa operador
                                 setTimeout(() => {
-                                    alert('AtualizaÃ§Ã£o concluÃ­da! O app vai reiniciar automaticamente. Aguarde alguns segundos e reabra o SimplificaÃŠ.');
+                                    alert('Atualização concluída! O app vai reiniciar automaticamente. Aguarde alguns segundos e reabra o SimplificaÊ.');
                                 }, 1500);
                             } else if (s.download_status === 'error') {
                                 clearInterval(poll);
@@ -6412,13 +6430,13 @@ HTML_TEMPLATE = '''
                         });
                     }, 1000);
                 } else if (data.status === 'ok') {
-                    alert('Atualizado! A pÃ¡gina vai recarregar.');
+                    alert('Atualizado! A página vai recarregar.');
                     location.reload();
                 } else {
                     alert('Erro: ' + (data.error || data.status || 'desconhecido'));
                 }
             })
-            .catch(e => alert('Erro ao iniciar atualizaÃ§Ã£o: ' + e));
+            .catch(e => alert('Erro ao iniciar atualização: ' + e));
         }
 
 
@@ -7159,9 +7177,9 @@ HTML_TEMPLATE = '''
             var saPerfilSel = document.createElement('select');
             saPerfilSel.id = 'sendall-perfil-select';
             saPerfilSel.style.cssText = 'width:100%;padding:7px 10px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;background:white;';
-            saPerfilSel.innerHTML = '<option value="recorrente">â†» Recorrente â€” Agenda disponÃ­vel</option>'
-                + '<option value="novo">â˜… Novo cliente â€” ApresentaÃ§Ã£o PicPay AR</option>'
-                + '<option value="taxa_zero">â‰ˆ Taxa zerada â€” SimulaÃ§Ã£o sem compromisso</option>';
+            saPerfilSel.innerHTML = '<option value="recorrente">↻ Recorrente — Agenda disponível</option>'
+                + '<option value="novo">★ Novo cliente — Apresentação PicPay AR</option>'
+                + '<option value="taxa_zero">≈ Taxa zerada — Simulação sem compromisso</option>';
             saPerfilWrap.appendChild(saPerfilLbl); saPerfilWrap.appendChild(saPerfilSel);
             card.appendChild(saPerfilWrap);
 
@@ -7524,7 +7542,7 @@ HTML_TEMPLATE = '''
             Object.values(mbEmp).forEach(function(v){tUrs+=v.urs||0;tVal+=v.valor||0;});
             var h='<div style="background:#FFF8E1;border:1px solid #FFB300;border-radius:8px;padding:12px 16px;margin-top:10px;">';
             h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
-            h+='<span style="font-size:13px;color:#E65100;font-weight:600;">ðŸ”’ Seller IDs n\u00e3o encontrados</span>';
+            h+='<span style="font-size:13px;color:#E65100;font-weight:600;">🔒 Seller IDs n\u00e3o encontrados</span>';
             h+='<span style="background:#FF6F00;color:white;border-radius:12px;padding:2px 8px;font-size:11px;">'+tUrs.toLocaleString('pt-BR')+' URs &bull; '+formatBRL(tVal)+' n\u00e3o oper\u00e1veis</span></div>';
             h+='<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#FFF3E0;">';
             h+='<th style="padding:5px 8px;text-align:left;">Empresa</th><th style="padding:5px 8px;text-align:right;">CNPJs s/ID</th><th style="padding:5px 8px;text-align:right;">URs</th><th style="padding:5px 8px;text-align:right;">Valor</th></tr></thead><tbody>';
@@ -7589,7 +7607,7 @@ HTML_TEMPLATE = '''
 
             var selectedCnpjs = Array.from(sel.selectedOptions).map(function(o){ return o.value; });
             if (selectedCnpjs.length === 0 || selectedCnpjs.length === sel.options.length) {
-                // Todos ou nenhum selecionado â€” nao filtrar (usa loadEmpresaFilters normal)
+                // Todos ou nenhum selecionado — nao filtrar (usa loadEmpresaFilters normal)
                 return;
             }
 
@@ -7786,7 +7804,7 @@ HTML_TEMPLATE = '''
 
 
 
-                document.getElementById('upload-status').innerHTML = '<div class="status status-success">âœ… '+data.total_urs.toLocaleString()+' URs encontradas em '+data.total_empresas+' empresas' + filesInfo + '</div>';
+                document.getElementById('upload-status').innerHTML = '<div class="status status-success">✅ '+data.total_urs.toLocaleString()+' URs encontradas em '+data.total_empresas+' empresas' + filesInfo + '</div>';
 
 
 
@@ -8046,7 +8064,7 @@ HTML_TEMPLATE = '''
 
 
 
-                btn.innerHTML = 'ðŸ­ Gerar Cotacoes (Todas as Empresas)';
+                btn.innerHTML = '🏭 Gerar Cotacoes (Todas as Empresas)';
 
 
 
@@ -8094,11 +8112,11 @@ HTML_TEMPLATE = '''
 
 
 
-                let html = '<div class="status status-success">âœ… '+data.empresas.length+' cotaÃ§Ãµes geradas!' + sellerInfo + '</div>';
+                let html = '<div class="status status-success">✅ '+data.empresas.length+' cotações geradas!' + sellerInfo + '</div>';
 
 
 
-                html += '<table class="mt-2"><tr><th>Empresa</th><th class="text-right">URs</th><th class="text-right">Valor Bruto</th><th class="text-right">OperÃ¡vel</th><th class="text-right">Taxa</th><th>AÃ§Ãµes</th></tr>';
+                html += '<table class="mt-2"><tr><th>Empresa</th><th class="text-right">URs</th><th class="text-right">Valor Bruto</th><th class="text-right">Operável</th><th class="text-right">Taxa</th><th>Ações</th></tr>';
 
 
 
@@ -8112,7 +8130,7 @@ HTML_TEMPLATE = '''
                     html += '<td class="text-right" style="color:#1B5E20;">'+opLabel1+'</td>';
                     html += '<td class="text-right" style="color:#1B5E20;font-weight:600;">'+taxaLabel1+'</td>';
                     html += '<td>';
-                    html += '<a href="/download/'+sessionId+'/'+encodeURIComponent(e.safe_name)+'" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">â¬‡ Download</a>';
+                    html += '<a href="/download/'+sessionId+'/'+encodeURIComponent(e.safe_name)+'" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">⬇ Download</a>';
 
 
 
@@ -8528,14 +8546,14 @@ HTML_TEMPLATE = '''
                             var opt = document.createElement('option');
                             opt.value = c.cnpj;
                             opt.selected = hasOp;  // seleciona apenas os operaveis
-                            opt.title = c.cnpj + ' | Total: ' + formatBRL(c.agenda_total) + ' | OperÃ¡vel: ' + formatBRL(c.agenda_operavel);
+                            opt.title = c.cnpj + ' | Total: ' + formatBRL(c.agenda_total) + ' | Operável: ' + formatBRL(c.agenda_operavel);
                             opt.style.color = hasOp ? '#212121' : '#C62828';
                             opt.textContent = c.cnpj
-                                + '  â”‚  ' + c.urs + ' URs'
-                                + '  â”‚  Total: ' + formatBRL(c.agenda_total)
+                                + '  │  ' + c.urs + ' URs'
+                                + '  │  Total: ' + formatBRL(c.agenda_total)
                                 + (hasOp
-                                    ? '  â”‚  Op: ' + formatBRL(c.agenda_operavel)
-                                    : '  â”‚  â›” InoperÃ¡vel');
+                                    ? '  │  Op: ' + formatBRL(c.agenda_operavel)
+                                    : '  │  ⛔ Inoperável');
                             cnpjSel.appendChild(opt);
                         });
                         cnpjSel.size = Math.min(data.cnpjs.length, 6);
@@ -8555,10 +8573,10 @@ HTML_TEMPLATE = '''
         if (_infoOp) {
             var _opv = data.total_valor_elegivel || 0;
             if (_opv > 0 && _opv < (data.total_valor||0)) {
-                _infoOp.textContent = 'OperÃ¡vel: ' + formatBRL(_opv);
+                _infoOp.textContent = 'Operável: ' + formatBRL(_opv);
                 _infoOp.style.display = '';
             } else if (_opv > 0) {
-                _infoOp.textContent = 'OperÃ¡vel: ' + formatBRL(_opv);
+                _infoOp.textContent = 'Operável: ' + formatBRL(_opv);
                 _infoOp.style.display = '';
             } else {
                 _infoOp.style.display = 'none';
@@ -8597,7 +8615,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    infoEl.innerHTML = 'Aguardando verificaÃ§Ã£o de elegibilidade...';
+                    infoEl.innerHTML = 'Aguardando verificação de elegibilidade...';
 
 
 
@@ -8895,14 +8913,14 @@ HTML_TEMPLATE = '''
 
 
 
-                let html = '<div class="status status-success">âœ… '+data.urs.toLocaleString()+' URs | '+formatBRL(data.valor)+' | '+data.periodo+'</div>';
+                let html = '<div class="status status-success">✅ '+data.urs.toLocaleString()+' URs | '+formatBRL(data.valor)+' | '+data.periodo+'</div>';
 
                 if (data.ur_parcial && data.ur_parcial.disponivel_total > data.valor) {
                     var economia = data.ur_parcial.disponivel_total - data.valor;
                     html += '<div style="font-size:12px;color:#555;padding:4px 12px;margin-top:-6px;">'
-                        + 'ðŸ“Œ URs selecionadas somam ' + formatBRL(data.ur_parcial.disponivel_total)
-                        + ' â€” valor efetivamente onerado: <strong>' + formatBRL(data.valor) + '</strong>'
-                        + ' (cessÃ£o parcial de ' + formatBRL(data.ur_parcial.remanescente) + ' poupada na Ãºltima UR)'
+                        + '📌 URs selecionadas somam ' + formatBRL(data.ur_parcial.disponivel_total)
+                        + ' — valor efetivamente onerado: <strong>' + formatBRL(data.valor) + '</strong>'
+                        + ' (cessão parcial de ' + formatBRL(data.ur_parcial.remanescente) + ' poupada na última UR)'
                         + '</div>';
                 }
 
@@ -8910,19 +8928,19 @@ HTML_TEMPLATE = '''
 
                 if (data.aviso) {
                     html += '<div class="status mt-2" style="background:#FFF8E1;color:#E65100;border:1px solid #F9A825;padding:10px;font-size:12px;">'
-                        + 'âš ï¸ ' + data.aviso + '</div>';
+                        + '⚠️ ' + data.aviso + '</div>';
                 }
 
                 if (data.ur_parcial) {
                     var up = data.ur_parcial;
                     html += '<div class="status mt-2" style="background:#E8F5E9;border:1px solid #A5D6A7;padding:12px 16px;font-size:12px;border-radius:8px;">'
-                        + '<div style="font-weight:700;color:#1B5E20;margin-bottom:6px;">âœ‚ï¸ CessÃ£o parcial aplicada na Ãºltima UR</div>'
+                        + '<div style="font-weight:700;color:#1B5E20;margin-bottom:6px;">✂️ Cessão parcial aplicada na última UR</div>'
                         + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
                         + '<tr><td style="color:#555;padding:2px 0;width:140px;">ID da UR</td>'
                         + '<td style="font-family:monospace;color:#1B5E20;">' + up.receivable_id + '</td></tr>'
                         + '<tr><td style="color:#555;padding:2px 0;">Vencimento</td>'
-                        + '<td>' + up.data_liquidacao + ' &nbsp;Â·&nbsp; ' + up.adquirente + ' / ' + up.arranjo + '</td></tr>'
-                        + '<tr><td style="color:#555;padding:2px 0;">DisponÃ­vel na UR</td>'
+                        + '<td>' + up.data_liquidacao + ' &nbsp;·&nbsp; ' + up.adquirente + ' / ' + up.arranjo + '</td></tr>'
+                        + '<tr><td style="color:#555;padding:2px 0;">Disponível na UR</td>'
                         + '<td>' + formatBRL(up.disponivel) + '</td></tr>'
                         + '<tr><td style="color:#555;padding:2px 0;font-weight:600;">Valor cedido</td>'
                         + '<td style="font-weight:700;color:#2E7D32;">' + formatBRL(up.cedido) + '</td></tr>'
@@ -8949,7 +8967,7 @@ HTML_TEMPLATE = '''
 
 
 
-                            + 'âš ï¸ <strong>' + excForEmp.length + ' seller(s) inelegivel(is) excluÃ­do(s) desta empresa:</strong> '
+                            + '⚠️ <strong>' + excForEmp.length + ' seller(s) inelegivel(is) excluído(s) desta empresa:</strong> '
 
 
 
@@ -8977,7 +8995,7 @@ HTML_TEMPLATE = '''
 
                 html += '<div class="mt-2" style="display:flex;gap:8px;align-items:center;">'
 
-                    + '<a href="/download/'+sessionId+'/custom" class="btn btn-download">â¬‡ï¸ Download Personalizada</a>'
+                    + '<a href="/download/'+sessionId+'/custom" class="btn btn-download">⬇️ Download Personalizada</a>'
 
                     + '<button class="btn-email-action-custom" '
 
@@ -9779,7 +9797,7 @@ HTML_TEMPLATE = '''
 
 
 
-            if (panel) panel.innerHTML = '<p style="padding:16px;color:#1B5E20;font-weight:600;">â³ Gerando CotaÃ§Ã£o + SeleÃ§Ã£o de URs com Seller IDs... aguarde.</p>';
+            if (panel) panel.innerHTML = '<p style="padding:16px;color:#1B5E20;font-weight:600;">⏳ Gerando Cotação + Seleção de URs com Seller IDs... aguarde.</p>';
 
 
 
@@ -9851,7 +9869,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    sellerStatus.innerHTML = 'âœ… CotaÃ§Ã£o + SeleÃ§Ã£o gerados! Seller IDs: ' + data.seller_ids_found + ' encontrados'
+                    sellerStatus.innerHTML = '✅ Cotação + Seleção gerados! Seller IDs: ' + data.seller_ids_found + ' encontrados'
 
 
 
@@ -9891,7 +9909,7 @@ HTML_TEMPLATE = '''
 
 
 
-                            + '<strong>âš ï¸ ' + data.ineligible_excluded.length + ' seller(s) excluÃ­do(s) desta geraÃ§Ã£o:</strong> '
+                            + '<strong>⚠️ ' + data.ineligible_excluded.length + ' seller(s) excluído(s) desta geração:</strong> '
 
 
 
@@ -9907,7 +9925,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    let html = '<div class="status status-success">âœ… ' + data.empresas.length + ' empresas geradas com Seller IDs | ' + data.seller_ids_found + ' encontrados'
+                    let html = '<div class="status status-success">✅ ' + data.empresas.length + ' empresas geradas com Seller IDs | ' + data.seller_ids_found + ' encontrados'
 
 
 
@@ -9919,7 +9937,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    html += '<table class="mt-2"><tr><th>Empresa</th><th class="text-right">URs</th><th class="text-right">Valor Bruto</th><th class="text-right">OperÃ¡vel</th><th class="text-right">Taxa</th><th>AÃ§Ãµes</th></tr>';
+                    html += '<table class="mt-2"><tr><th>Empresa</th><th class="text-right">URs</th><th class="text-right">Valor Bruto</th><th class="text-right">Operável</th><th class="text-right">Taxa</th><th>Ações</th></tr>';
 
 
 
@@ -9940,7 +9958,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    html += '<a href="/download/' + sid + '/' + encodeURIComponent(e.safe_name) + '" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">â¬‡ Download</a>';
+                    html += '<a href="/download/' + sid + '/' + encodeURIComponent(e.safe_name) + '" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">⬇ Download</a>';
 
 
 
@@ -10185,7 +10203,7 @@ HTML_TEMPLATE = '''
 
 
 
-                + ' <span id="prefetch-msg">Verificando sellers e elegibilidade... <strong>vocÃª jÃ¡ pode continuar</strong></span>'
+                + ' <span id="prefetch-msg">Verificando sellers e elegibilidade... <strong>você já pode continuar</strong></span>'
 
 
 
@@ -10341,7 +10359,7 @@ HTML_TEMPLATE = '''
 
 
 
-                            indicator.innerHTML = 'âš ï¸ <span>Sellers: erro (' + data.error.substring(0,80) + ')</span>'
+                            indicator.innerHTML = '⚠️ <span>Sellers: erro (' + data.error.substring(0,80) + ')</span>'
 
 
 
@@ -10357,11 +10375,11 @@ HTML_TEMPLATE = '''
 
 
 
-                            indicator.innerHTML = 'âœ… <span><strong>' + (data.seller_ids_found || 0)
+                            indicator.innerHTML = '✅ <span><strong>' + (data.seller_ids_found || 0)
 
 
 
-                                + ' Seller IDs</strong> verificados â€” elegibilidade pronta</span>'
+                                + ' Seller IDs</strong> verificados — elegibilidade pronta</span>'
 
 
 
@@ -10421,7 +10439,7 @@ HTML_TEMPLATE = '''
 
 
 
-                            + ' â€” <strong>vocÃª jÃ¡ pode continuar</strong>';
+                            + ' — <strong>você já pode continuar</strong>';
 
 
 
@@ -10808,7 +10826,7 @@ HTML_TEMPLATE = '''
 
                 h3.style.cssText = 'margin:0;color:#1B5E20;font-size:16px;';
 
-                h3.textContent = 'Enviar CotaÃ§Ã£o por E-mail';
+                h3.textContent = 'Enviar Cotação por E-mail';
 
                 var btnClose = document.createElement('button');
 
@@ -10863,9 +10881,9 @@ HTML_TEMPLATE = '''
                 var perfilSel = document.createElement('select');
                 perfilSel.id = 'email-perfil-select';
                 perfilSel.style.cssText = 'width:100%;padding:7px 10px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;background:white;';
-                perfilSel.innerHTML = '<option value="recorrente">â†» Recorrente â€” Agenda disponÃ­vel</option>'
-                    + '<option value="novo">â˜… Novo cliente â€” ApresentaÃ§Ã£o PicPay AR</option>'
-                    + '<option value="taxa_zero">â‰ˆ Taxa zerada â€” SimulaÃ§Ã£o sem compromisso</option>';
+                perfilSel.innerHTML = '<option value="recorrente">↻ Recorrente — Agenda disponível</option>'
+                    + '<option value="novo">★ Novo cliente — Apresentação PicPay AR</option>'
+                    + '<option value="taxa_zero">≈ Taxa zerada — Simulação sem compromisso</option>';
                 perfilWrap.appendChild(perfilLbl); perfilWrap.appendChild(perfilSel);
 
                 // Campo destinatarios (multiplos)
@@ -10873,7 +10891,7 @@ HTML_TEMPLATE = '''
         fldWrap.style.marginBottom = '12px';
         var lbl = document.createElement('label');
         lbl.style.cssText = 'font-size:13px;font-weight:600;display:block;margin-bottom:6px;';
-        lbl.textContent = 'DestinatÃ¡rios';
+        lbl.textContent = 'Destinatários';
         var emailListDiv = document.createElement('div');
         emailListDiv.style.cssText = 'display:flex;flex-direction:column;gap:5px;margin-bottom:5px;';
         function addEmailRow(v) {
@@ -10895,7 +10913,7 @@ HTML_TEMPLATE = '''
         initEmails.forEach(function(e) { addEmailRow(e); });
         // Botao adicionar
         var btnAdd = document.createElement('button');
-        btnAdd.type = 'button'; btnAdd.textContent = '+ Adicionar destinatÃ¡rio';
+        btnAdd.type = 'button'; btnAdd.textContent = '+ Adicionar destinatário';
         btnAdd.style.cssText = 'width:100%;border:1px dashed #90CAF9;color:#1565C0;background:none;border-radius:6px;padding:5px;font-size:12px;cursor:pointer;';
         btnAdd.onclick = function() { addEmailRow(''); };
         fldWrap.appendChild(lbl);
@@ -10911,7 +10929,7 @@ HTML_TEMPLATE = '''
 
                 preview.style.cssText = 'background:#F5F5F5;border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:#616161;';
 
-                preview.innerHTML = '<strong>Assunto:</strong> [PicPay AR] Agenda de AntecipaÃ§Ã£o de RecebÃ­veis â€” ' + empresa + '<br>'
+                preview.innerHTML = '<strong>Assunto:</strong> [PicPay AR] Agenda de Antecipação de Recebíveis — ' + empresa + '<br>'
 
                     + '<strong>Anexo:</strong> Cotacao_COMPLETO_' + safe + '.xlsx';
 
@@ -10973,7 +10991,7 @@ HTML_TEMPLATE = '''
                 var msgTa = document.createElement('textarea');
                 msgTa.id = 'emailMsg'; msgTa.rows = 3;
                 msgTa.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;resize:vertical;';
-                msgTa.placeholder = 'Deixe em branco para usar o texto padrÃ£o. Exemplo: Conforme solicitado, segue cotaÃ§Ã£o atualizada.';
+                msgTa.placeholder = 'Deixe em branco para usar o texto padrão. Exemplo: Conforme solicitado, segue cotação atualizada.';
                 msgTa.value = window._lastEmailMsg || '';
                 msgTa.addEventListener('input', function(){ window._lastEmailMsg = msgTa.value; });
                 msgWrap.appendChild(msgLbl); msgWrap.appendChild(msgTa);
@@ -11008,7 +11026,7 @@ HTML_TEMPLATE = '''
 
             if (!toEmail) {
 
-                if (statusEl) statusEl.textContent = 'Informe o e-mail do destinatÃ¡rio.';
+                if (statusEl) statusEl.textContent = 'Informe o e-mail do destinatário.';
 
                 return;
 
@@ -11695,7 +11713,7 @@ def generate():
 
     data = request.json
 
-    _t0_gen = time.time()  # telemetria: marca inÃ­cio
+    _t0_gen = time.time()  # telemetria: marca início
 
 
 
@@ -11707,7 +11725,7 @@ def generate():
 
 
 
-    taxa_map = data.get('taxa_map') or {}   # {empresa: taxa_pct} â€” opcional
+    taxa_map = data.get('taxa_map') or {}   # {empresa: taxa_pct} — opcional
 
 
 
@@ -11855,7 +11873,7 @@ def generate():
 
 
 
-    # Limpar pasta anterior pra nao misturar arquivos de geraÃ§Ãµes diferentes
+    # Limpar pasta anterior pra nao misturar arquivos de gerações diferentes
 
 
 
@@ -11939,7 +11957,7 @@ def generate():
 
 
 
-        # /generate: sem elegibilidade â€” gera tudo com emp_recs
+        # /generate: sem elegibilidade — gera tudo com emp_recs
 
 
 
@@ -12003,7 +12021,7 @@ def generate():
 
 
 
-    # Salvar no histÃ³rico
+    # Salvar no histórico
 
 
 
@@ -12581,7 +12599,7 @@ def fetch_sellers_route():
 
 
 
-    # Sellers forÃ§ados pelo operador (inelegiveis mas aceitos so na cotacao)
+    # Sellers forçados pelo operador (inelegiveis mas aceitos so na cotacao)
 
 
 
@@ -13239,7 +13257,7 @@ def fetch_sellers_route():
 
             s_id = seller_map.get(cnpj, '')
 
-            # Sem seller_id: nao podemos operar â€” tratar como inelegivel
+            # Sem seller_id: nao podemos operar — tratar como inelegivel
             if not s_id:
 
                 return False
@@ -15003,19 +15021,19 @@ def generate_custom():
             restante = round(valor_alvo - acum, 2)
 
             if restante <= 0:
-                break  # alvo jÃ¡ atingido exatamente
+                break  # alvo já atingido exatamente
 
             if acum + val_ur <= valor_alvo:
-                # UR cabe inteira â€” sem alteraÃ§Ã£o
+                # UR cabe inteira — sem alteração
                 r = dict(r)
                 r.pop('_valor_cedido', None)
                 selected.append(r)
                 acum += val_ur
 
             else:
-                # UR ultrapassa o alvo â€” ceder apenas o valor restante necessÃ¡rio
+                # UR ultrapassa o alvo — ceder apenas o valor restante necessário
                 r = dict(r)
-                r['_valor_cedido'] = restante  # cessÃ£o parcial da UR
+                r['_valor_cedido'] = restante  # cessão parcial da UR
                 selected.append(r)
                 acum = valor_alvo
                 break
@@ -15040,7 +15058,7 @@ def generate_custom():
 
 
 
-                f'Agenda elegÃ­vel insuficiente: R$ {acum:,.2f} disponivel '
+                f'Agenda elegível insuficiente: R$ {acum:,.2f} disponivel '
 
 
 
@@ -15048,7 +15066,7 @@ def generate_custom():
 
 
 
-                f'Todas as URs elegÃ­veis foram incluÃ­das.'
+                f'Todas as URs elegíveis foram incluídas.'
 
 
 
@@ -15292,13 +15310,13 @@ def generate_custom():
 
 
 
-    # Valor bruto real: usar _valor_cedido na UR parcial (nÃ£o o disponivel cheio)
+    # Valor bruto real: usar _valor_cedido na UR parcial (não o disponivel cheio)
     _valor_bruto = sum(
         r.get('_valor_cedido', r.get('disponivel', 0))
         for r in filtered_no_inelig
     )
 
-    # Identificar UR com cessÃ£o parcial (se houver)
+    # Identificar UR com cessão parcial (se houver)
     _ur_parcial = None
     for _r in filtered_no_inelig:
         if '_valor_cedido' in _r:
@@ -15543,20 +15561,20 @@ def api_update_file(filename):
 
 @app.route('/restart', methods=['POST'])
 def restart_app():
-    """Reinicia o processo do app para carregar cÃ³digo novo do disco."""
+    """Reinicia o processo do app para carregar código novo do disco."""
     import threading, time, subprocess
 
     def _do_restart():
         time.sleep(1)
         try:
             if getattr(sys, 'frozen', False):
-                # Rodando como .exe â€” relanÃ§ar o executÃ¡vel
+                # Rodando como .exe — relançar o executável
                 exe = sys.executable
                 subprocess.Popen([exe], creationflags=0x00000008)  # DETACHED_PROCESS
             else:
                 # Rodando como script Python
                 subprocess.Popen([sys.executable] + sys.argv)
-            # Encerrar o processo atual apÃ³s lanÃ§ar o novo
+            # Encerrar o processo atual após lançar o novo
             os._exit(0)
         except Exception:
             os._exit(0)
@@ -15627,7 +15645,7 @@ def server_status():
 
 @app.route('/check_update')
 def check_update():
-    # Usa updater.py (GitHub) se disponÃ­vel, fallback para HISTORY_SERVER_URL legado
+    # Usa updater.py (GitHub) se disponível, fallback para HISTORY_SERVER_URL legado
     if _UPDATER_OK:
         return jsonify(_updater.get_status())
     server_url = os.environ.get('HISTORY_SERVER_URL', '').strip()
@@ -15645,13 +15663,13 @@ def check_update():
 
 @app.route('/apply_update', methods=['POST'])
 def apply_update():
-    # Usa updater.py (GitHub) se disponÃ­vel
+    # Usa updater.py (GitHub) se disponível
     if _UPDATER_OK:
         status = _updater.get_status()
         if status.get('has_update'):
             _updater.start_download_and_update()
             return jsonify({'status': 'download iniciado'})
-        return jsonify({'status': 'nenhuma atualizaÃ§Ã£o disponÃ­vel'})
+        return jsonify({'status': 'nenhuma atualização disponível'})
     server_url = os.environ.get('HISTORY_SERVER_URL', '').strip()
 
 
@@ -16072,11 +16090,11 @@ def oauth_callback():
 
 
 
-            <p>Token OAuth salvo com sucesso. O refresh automÃ¡tico estÃ¡ ativo.</p>
+            <p>Token OAuth salvo com sucesso. O refresh automático está ativo.</p>
 
 
 
-            <p><a href="/" style="color:#4CAF50;font-size:18px;">Voltar para o SimplificaÃŠ</a></p>
+            <p><a href="/" style="color:#4CAF50;font-size:18px;">Voltar para o SimplificaÊ</a></p>
 
 
 
@@ -16360,7 +16378,7 @@ def oauth_disconnect():
 
 
 
-# HISTÃ“RICO
+# HISTÓRICO
 
 
 
@@ -16503,7 +16521,7 @@ def _push_history_github(entry):
             pass  # sucesso
 
     except Exception:
-        pass  # silencioso â€” nao impacta o usuario
+        pass  # silencioso — nao impacta o usuario
 
 def _push_history_background(entry):
     """Dispara sync em thread daemon (nao bloqueia o usuario)."""
@@ -16766,56 +16784,6 @@ EMAIL_HISTORY_FILE = os.path.join(BASE_DIR, 'email_history.json')
 EMAIL_DEST_FILE = os.path.join(BASE_DIR, 'email_destinatarios.json')
 
 
-def _smtp_send(cfg, msg_obj, to_list):
-    """Envia e-mail tentando automaticamente 587/STARTTLS e 465/SSL.
-    
-    Ignora a porta salva na config â€” testa na ordem que funcionar na rede atual.
-    Salva a porta que funcionou no email_config.json para otimizar prÃ³ximas chamadas.
-    
-    Retorna None se OK, ou string de erro se falhou nas duas portas.
-    """
-    host = cfg.get('smtp_host', 'smtp.gmail.com')
-    user = cfg['smtp_user']
-    pwd  = cfg['smtp_pass']
-    sender = user
-
-    # Ordem de tentativa: porta salva primeiro, depois a alternativa
-    saved_port = int(cfg.get('smtp_port', 587))
-    if saved_port == 465:
-        attempts = [(465, 'ssl'), (587, 'starttls')]
-    else:
-        attempts = [(587, 'starttls'), (465, 'ssl')]
-
-    last_err = None
-    for port, mode in attempts:
-        try:
-            if mode == 'ssl':
-                with smtplib.SMTP_SSL(host, port, timeout=20) as srv:
-                    srv.login(user, pwd)
-                    srv.send_message(msg_obj, sender, to_list)
-            else:
-                with smtplib.SMTP(host, port, timeout=20) as srv:
-                    srv.ehlo()
-                    srv.starttls()
-                    srv.ehlo()
-                    srv.login(user, pwd)
-                    srv.send_message(msg_obj, sender, to_list)
-            # Funcionou â€” salvar a porta que funcionou se for diferente da salva
-            if port != saved_port:
-                try:
-                    cfg2 = load_email_config()
-                    cfg2['smtp_port'] = port
-                    with open(EMAIL_CONFIG_FILE, 'w') as f:
-                        json.dump(cfg2, f, indent=2)
-                except Exception:
-                    pass
-            return None  # sucesso
-        except Exception as e:
-            last_err = str(e)
-            continue
-
-    return last_err  # falhou nas duas
-
 
 def load_email_config():
 
@@ -16875,7 +16843,7 @@ def setup_email():
 
     cfg = {
 
-        # strip() + replace \xa0 (non-breaking space) por espaÃ§o normal
+        # strip() + replace \xa0 (non-breaking space) por espaço normal
         # Evita erro ascii ao copiar senha de PDF/Word/e-mail
         'smtp_user':     data.get('smtp_user', '').strip().replace('\xa0', ' '),
         'smtp_pass':     data.get('smtp_pass', '').strip().replace('\xa0', ' '),
@@ -16922,6 +16890,15 @@ def get_email_config():
 
 def send_email_route():
 
+    import smtplib
+
+    from email.mime.multipart import MIMEMultipart
+
+    from email.mime.text import MIMEText
+
+    from email.mime.base import MIMEBase
+
+    from email import encoders as _enc
     from email.header import Header as _Header
 
 
@@ -17022,11 +16999,11 @@ def send_email_route():
 
 
 
-    subject = '[PicPay AR] Agenda de AntecipaÃ§Ã£o de RecebÃ­veis â€” {} â€” {}'.format(empresa, hoje)
+    subject = '[PicPay AR] Agenda de Antecipação de Recebíveis — {} — {}'.format(empresa, hoje)
 
 
 
-    _label_agenda = 'SimulaÃ§Ã£o total da operaÃ§Ã£o' if is_custom else 'Agenda total disponÃ­vel'
+    _label_agenda = 'Simulação total da operação' if is_custom else 'Agenda total disponível'
 
 
 
@@ -17040,33 +17017,33 @@ def send_email_route():
 
     _tr_taxa = (
         '<tr style="border-top:1px solid #F5F5F5;background:#E8F5E9;">'
-        '<td style="padding:10px;font-size:14px;color:#1B5E20;font-weight:bold;">Taxa de operaÃ§Ã£o</td>'
+        '<td style="padding:10px;font-size:14px;color:#1B5E20;font-weight:bold;">Taxa de operação</td>'
         '<td style="padding:10px;font-size:18px;font-weight:bold;color:#1B5E20;text-align:right;">' + str(round(pct,2)) + '%</td></tr>'
     ) if pct > 0 else ''
 
     _tr_liq = (
         '<tr style="border-top:1px solid #F5F5F5;">'
-        '<td style="padding:8px 0;font-size:13px;color:#757575;">Valor lÃ­quido estimado</td>'
+        '<td style="padding:8px 0;font-size:13px;color:#757575;">Valor líquido estimado</td>'
         '<td style="padding:8px 0;font-size:15px;font-weight:bold;text-align:right;color:#1B5E20;">' + _brl(_vliq) + '</td></tr>'
     ) if pct > 0 and _vliq > 0 else ''
 
     if perfil_cliente == 'novo':
-        _intro  = ('<p style="font-size:15px;">OlÃ¡,</p>'
-                   '<p style="font-size:15px;">VocÃª sabia que no PicPay vocÃª jÃ¡ pode antecipar valores '
-                   'transacionados em outras maquininhas com uma taxa bem abaixo da mÃ©dia de mercado?</p>'
-                   '<p style="font-size:15px;">JÃ¡ estamos antecipando as principais adquirentes do mercado, '
+        _intro  = ('<p style="font-size:15px;">Olá,</p>'
+                   '<p style="font-size:15px;">Você sabia que no PicPay você já pode antecipar valores '
+                   'transacionados em outras maquininhas com uma taxa bem abaixo da média de mercado?</p>'
+                   '<p style="font-size:15px;">Já estamos antecipando as principais adquirentes do mercado, '
                    'como <strong>Cielo, Rede, Getnet, Stone, Safrapay e Adyen</strong>.</p>'
-                   '<p style="font-size:15px;">Segue em anexo os valores disponÃ­veis para antecipaÃ§Ã£o.</p>')
+                   '<p style="font-size:15px;">Segue em anexo os valores disponíveis para antecipação.</p>')
         _rodape = 'Para contratar, negociar ou simular outros valores, entre em contato com um especialista:'
         _cta    = 'Falar com um especialista'
     elif perfil_cliente == 'taxa_zero':
-        _intro  = ('<p style="font-size:15px;">OlÃ¡,</p>'
-                   '<p style="font-size:15px;">Segue agenda disponÃ­vel para antecipaÃ§Ã£o.</p>')
-        _rodape = 'Para negociar ou simular uma operaÃ§Ã£o sem compromisso, entre em contato com um especialista:'
+        _intro  = ('<p style="font-size:15px;">Olá,</p>'
+                   '<p style="font-size:15px;">Segue agenda disponível para antecipação.</p>')
+        _rodape = 'Para negociar ou simular uma operação sem compromisso, entre em contato com um especialista:'
         _cta    = 'Falar com um especialista'
     else:  # recorrente (default)
-        _intro  = ('<p style="font-size:15px;">OlÃ¡,</p>'
-                   '<p style="font-size:15px;">Segue agenda disponÃ­vel para antecipaÃ§Ã£o.</p>')
+        _intro  = ('<p style="font-size:15px;">Olá,</p>'
+                   '<p style="font-size:15px;">Segue agenda disponível para antecipação.</p>')
         _rodape = 'Para contratar, negociar ou simular outros valores, entre em contato com um especialista:'
         _cta    = 'Falar com um especialista'
 
@@ -17075,7 +17052,7 @@ def send_email_route():
     body = (
         '<html><body style="font-family:Arial,sans-serif;color:#212121;max-width:600px;margin:0 auto;">'
         '<div style="background:#1B5E20;padding:20px 24px;border-radius:8px 8px 0 0;">'
-        '<h2 style="color:white;margin:0;font-size:20px;">PicPay â€” AntecipaÃ§Ã£o de RecebÃ­veis</h2>'
+        '<h2 style="color:white;margin:0;font-size:20px;">PicPay — Antecipação de Recebíveis</h2>'
         '<p style="color:#C8E6C9;margin:4px 0 0;font-size:13px;">' + hoje + '</p></div>'
         '<div style="background:#F9FBE7;padding:20px 24px;border:1px solid #E0E0E0;border-top:none;">'
         + _intro
@@ -17091,7 +17068,7 @@ def send_email_route():
         'padding:12px 28px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:bold;">' + _cta + '</a>'
         '</div>'
         '<p style="font-size:12px;color:#9E9E9E;border-top:1px solid #E0E0E0;padding-top:12px;">'
-        'Gerado automaticamente pelo SimplificaÃŠ â€” PicPay AR. Data: ' + hoje + '</p>'
+        'Gerado automaticamente pelo SimplificaÊ — PicPay AR. Data: ' + hoje + '</p>'
         '</div></body></html>'
     )
 
@@ -17126,7 +17103,7 @@ def send_email_route():
 
             part.set_payload(af.read())
 
-            _email_encoders.encode_base64(part)
+            _enc.encode_base64(part)
 
             part.add_header('Content-Disposition', 'attachment; filename="{}"'.format(attach_name))
 
@@ -17135,12 +17112,23 @@ def send_email_route():
 
 
     try:
-        err = _smtp_send(cfg, msg, to_emails_list)
-        if err:
-            return jsonify({'error': 'Falha ao enviar: {}'.format(err)}), 500
+
+        with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port']) as srv:
+
+            srv.starttls()
+
+            srv.login(cfg['smtp_user'], cfg['smtp_pass'])
+
+            # send_message() é o método correto para objetos MIME —
+            # nunca tenta encodar em ASCII, suporta qualquer caractere Unicode
+            srv.send_message(msg, cfg['smtp_user'], to_emails_list)
+
         status_e = 'enviado'
+
         error_e  = None
+
     except Exception as ex:
+
         return jsonify({'error': 'Falha ao enviar: {}'.format(str(ex))}), 500
 
 
@@ -17247,16 +17235,16 @@ def get_email_destinatarios():
 
 
 # ==============================================================================
-# HERODASH FLOW â€” CotaÃ§Ã£o RÃ¡pida
-# Fluxo: CNPJ/raiz -> baixa agenda HD -> upload -> gera cotaÃ§Ã£o taxa=0 -> envia email
+# HERODASH FLOW — Cotação Rápida
+# Fluxo: CNPJ/raiz -> baixa agenda HD -> upload -> gera cotação taxa=0 -> envia email
 # ==============================================================================
 
-# Token do HeroDash â€” lido do arquivo salvo pelo plugin herodash-connector
+# Token do HeroDash — lido do arquivo salvo pelo plugin herodash-connector
 _HD_API_BASE   = 'https://herodash-api.picpay.com/api/v1'
 _HD_API_BFF    = 'https://herodash-api.picpay.com/api/v1/herodash-bff'
 _HD_SELLER_SVC = 'https://herodash-seller-service-bff.picpay.com/api/v1'
 
-# PossÃ­veis locais do arquivo de token salvo pelo plugin herodash-connector
+# Possíveis locais do arquivo de token salvo pelo plugin herodash-connector
 _HD_TOKEN_CANDIDATES = [
     os.path.join(os.path.expanduser('~'), '.wolf', 'herodash-auth.json'),
     os.path.join('C:\\', 'tmp', '.wolf', 'herodash-auth.json'),
@@ -17266,7 +17254,7 @@ _HD_TOKEN_CANDIDATES = [
 def _hd_token():
     """Retorna o JWT do HeroDash salvo pelo plugin herodash-connector.
     
-    Suporta mÃºltiplos formatos:
+    Suporta múltiplos formatos:
     - {'token': 'eyJ...'}
     - {'localStorage': {'token': 'eyJ...'}}
     - storageState Playwright: {'origins': [{'localStorage': [{'name':'token','value':'eyJ...'}]}]}
@@ -17320,7 +17308,7 @@ def _hd_search_seller(cnpj_or_raiz):
         return None, 'requests nao instalado'
     hdrs = _hd_headers()
     if not hdrs:
-        return None, 'Token HeroDash nao encontrado. FaÃ§a login no HeroDash primeiro.'
+        return None, 'Token HeroDash nao encontrado. Faça login no HeroDash primeiro.'
     q = cnpj_or_raiz.replace('.', '').replace('/', '').replace('-', '')
     try:
         r = http_requests.get(
@@ -17330,14 +17318,14 @@ def _hd_search_seller(cnpj_or_raiz):
             timeout=15
         )
         if r.status_code == 401:
-            return None, 'Token HeroDash expirado. FaÃ§a login novamente.'
+            return None, 'Token HeroDash expirado. Faça login novamente.'
         r.raise_for_status()
         return r.json(), None
     except Exception as e:
         return None, str(e)
 
 def _hd_gerar_agenda(cnpj_raiz, use_raiz=True):
-    """Solicita geraÃ§Ã£o de agenda no HD. Retorna file_id ou erro.
+    """Solicita geração de agenda no HD. Retorna file_id ou erro.
     
     Nova API (herodash-bff):
     POST /herodash-bff/advance-receivables-agenda
@@ -17352,7 +17340,7 @@ def _hd_gerar_agenda(cnpj_raiz, use_raiz=True):
     if use_raiz:
         payload = {'cnpjs': [], 'rootCnpjs': [cnpj_fmt[:8]]}
     else:
-        # CNPJ completo deve ter 14 dÃ­gitos
+        # CNPJ completo deve ter 14 dígitos
         if len(cnpj_fmt) < 14:
             cnpj_fmt = cnpj_fmt.zfill(14)
         payload = {'cnpjs': [cnpj_fmt], 'rootCnpjs': []}
@@ -17366,7 +17354,7 @@ def _hd_gerar_agenda(cnpj_raiz, use_raiz=True):
         if r.status_code == 401:
             return None, 'Token HeroDash expirado.'
         if r.status_code == 404:
-            return None, 'Rota nÃ£o encontrada. Verifique permissÃµes Mesa AR.'
+            return None, 'Rota não encontrada. Verifique permissões Mesa AR.'
         r.raise_for_status()
         data = r.json()
         # Resposta pode ser o objeto da agenda ou lista
@@ -17381,7 +17369,7 @@ def _hd_status_agenda(file_id):
     """Verifica status da agenda consultando a lista recente.
     
     Nova API: GET /herodash-bff/advance-receivables-agenda?sort=DESC&page=1&pageSize=10
-    Retorna (status_str, None) â€” 'processed'/'PROCESSED' quando pronto
+    Retorna (status_str, None) — 'processed'/'PROCESSED' quando pronto
     """
     if http_requests is None:
         return None, None
@@ -17432,9 +17420,9 @@ def _hd_download_agenda(file_id):
         resp_json = r_url.json()
         file_url = resp_json.get('fileUrl') or resp_json.get('url') or resp_json.get('download_url')
         if not file_url:
-            return None, None, f'URL de download nÃ£o encontrada: {r_url.text[:200]}'
+            return None, None, f'URL de download não encontrada: {r_url.text[:200]}'
         
-        # 2. Baixar o CSV da URL S3 (sem Authorization â€” URL presignada)
+        # 2. Baixar o CSV da URL S3 (sem Authorization — URL presignada)
         r_csv = http_requests.get(file_url, timeout=120)
         r_csv.raise_for_status()
         fname = f'{file_id}.csv'
@@ -17448,137 +17436,125 @@ def _hd_download_agenda(file_id):
 @app.route('/herodash/cotacao_rapida', methods=['POST'])
 def hd_cotacao_rapida():
     """
-    Fluxo completo em uma Ãºnica chamada:
-      1. Gera agenda no HD pelo CNPJ/raiz
-      2. Aguarda processamento (polling)
-      3. Baixa o CSV
-      4. Faz upload no SimplificaÃŠ (cria sessÃ£o)
-      5. Gera cotaÃ§Ã£o com taxa=0 e operador atual
-      6. (Opcional) Envia email para o cliente se email_cliente informado
-    Body JSON: {
-      cnpj: "17678232000104",        // CNPJ ou raiz (8 dÃ­gitos)
-      use_raiz: true,                // opcional, default true
-      operator_email: "cesar.oda@picpay.com",
-      email_cliente: "cliente@empresa.com",  // opcional
-      enviar_email: false            // opcional, default false
-    }
+    Fluxo multi-empresa com lotes de 5 raizes (limite HD).
+    Body: {empresas:[{cnpj,emails:[]}], use_raiz, operator_email, enviar_email}
+    Compativel com formato antigo: {cnpj, email_cliente}
     """
-    import time as _time
+    import time as _time, re as _re
 
     if http_requests is None:
-        return jsonify({'error': 'MÃ³dulo requests nÃ£o instalado no servidor.'}), 500
+        return jsonify({'error': 'Modulo requests nao instalado.'}), 500
 
     data = request.json or {}
-    cnpj_raw       = data.get('cnpj', '').strip()
     use_raiz       = data.get('use_raiz', True)
     operator_email = data.get('operator_email', '').strip()
-    email_cliente  = data.get('email_cliente', '').strip()
     enviar_email   = data.get('enviar_email', False)
 
-    if not cnpj_raw:
-        return jsonify({'error': 'CNPJ obrigatÃ³rio'}), 400
+    # Compatibilidade retroativa
+    if 'cnpj' in data and 'empresas' not in data:
+        cnpj_raw  = data.get('cnpj', '').strip()
+        email_cli = data.get('email_cliente', '').strip()
+        empresas_in = [{'cnpj': cnpj_raw, 'emails': [email_cli] if email_cli else []}]
+    else:
+        empresas_in = data.get('empresas', [])
+
+    if not empresas_in:
+        return jsonify({'error': 'Informe pelo menos um CNPJ ou raiz.'}), 400
 
     hdrs = _hd_headers()
     if not hdrs:
-        return jsonify({'error': 'Token HeroDash nÃ£o encontrado. FaÃ§a login no HeroDash primeiro (Menu â†’ HeroDash).'}), 401
+        return jsonify({'error': 'Token HeroDash nao encontrado. Faca login no plugin HeroDash do Nitro.'}), 401
 
-    # ----- PASSO 1: Solicitar geraÃ§Ã£o da agenda -----
-    cnpj_clean = cnpj_raw.replace('.', '').replace('/', '').replace('-', '')
-    if use_raiz:
-        payload_hd = {'cnpjs': [], 'rootCnpjs': [cnpj_clean[:8]]}
-    else:
-        if len(cnpj_clean) < 14:
-            cnpj_clean = cnpj_clean.zfill(14)
-        payload_hd = {'cnpjs': [cnpj_clean], 'rootCnpjs': []}
-    try:
-        r1 = http_requests.post(
-            f'{_HD_API_BFF}/advance-receivables-agenda',
-            json=payload_hd,
-            headers=hdrs,
-            timeout=20
-        )
-        if r1.status_code == 401:
-            return jsonify({'error': 'Token HeroDash expirado. FaÃ§a login novamente no plugin HeroDash do Nitro.'}), 401
-        if r1.status_code == 404:
-            return jsonify({'error': 'Sem acesso Ã  Mesa AR no HeroDash. Verifique permissÃµes.'}), 403
-        if r1.status_code == 403:
-            return jsonify({'error': 'Sem permissÃ£o para gerar agenda no HeroDash.'}), 403
-        r1.raise_for_status()
-        resp_data = r1.json()
-        # A resposta pode ser o objeto da agenda criada ou lista
-        file_id = resp_data.get('fileId') or resp_data.get('id') or resp_data.get('file_id')
-        if not file_id and isinstance(resp_data, list) and len(resp_data) > 0:
-            file_id = resp_data[0].get('fileId')
-        if not file_id:
-            import re as _re
-            m = _re.search(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', r1.text)
-            if m:
-                file_id = m.group(0)
-            else:
-                return jsonify({'error': f'Resposta inesperada do HeroDash: {r1.text[:300]}'}), 502
-    except http_requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Erro ao solicitar agenda ao HeroDash: {str(e)}'}), 502
+    def _norm(cnpj, raiz):
+        c = cnpj.replace('.','').replace('/','').replace('-','').strip()
+        if raiz:
+            return c[:8].zfill(8)
+        return c.zfill(14) if len(c) < 14 else c
 
-    # ----- PASSO 2: Polling atÃ© PROCESSED (mÃ¡x 3 min) -----
-    max_wait = 180
-    poll_interval = 8
-    elapsed = 0
-    status_final = 'processando'
+    cnpj_email_map = {}
+    cnpjs = []
+    for emp in empresas_in:
+        raw = (emp.get('cnpj') or '').strip()
+        if not raw: continue
+        cn = _norm(raw, use_raiz)
+        cnpj_email_map[cn] = emp.get('emails') or []
+        cnpjs.append(cn)
 
-    while elapsed < max_wait:
-        _time.sleep(poll_interval)
-        elapsed += poll_interval
+    if not cnpjs:
+        return jsonify({'error': 'Nenhum CNPJ valido informado.'}), 400
+
+    BATCH = 5
+    all_csv = []
+
+    for bi in range(0, len(cnpjs), BATCH):
+        lote = cnpjs[bi:bi+BATCH]
+        payload_hd = {'cnpjs': [], 'rootCnpjs': lote} if use_raiz else {'cnpjs': lote, 'rootCnpjs': []}
+        lote_num = bi // BATCH + 1
+
         try:
-            rs = http_requests.get(
-                f'{_HD_API_BFF}/advance-receivables-agenda',
-                params={'sort': 'DESC', 'page': 1, 'pageSize': 20},
-                headers=hdrs,
-                timeout=15
-            )
-            if rs.status_code in (401,):
-                break
-            rs.raise_for_status()
-            rs_data = rs.json()
-            items = rs_data.get('data', rs_data) if isinstance(rs_data, dict) else rs_data
-            for item in (items if isinstance(items, list) else []):
-                if item.get('fileId') == file_id:
-                    status_final = (item.get('status') or '').lower()
-                    break
-            if 'processed' == status_final or 'finaliz' in status_final or 'complet' in status_final:
-                break
-            if 'erro' in status_final or 'fail' in status_final:
-                return jsonify({'error': f'Agenda falhou no HeroDash: {status_final}'}), 502
-        except Exception:
-            pass
+            r1 = http_requests.post(f'{_HD_API_BFF}/advance-receivables-agenda',
+                json=payload_hd, headers=hdrs, timeout=20)
+            if r1.status_code == 401:
+                return jsonify({'error': 'Token HeroDash expirado.'}), 401
+            if r1.status_code in (403, 404):
+                return jsonify({'error': 'Sem acesso a Mesa AR no HeroDash.'}), 403
+            # 422 = ja em processamento, extrair fileId e continuar
+            if r1.status_code != 422:
+                r1.raise_for_status()
+        except http_requests.exceptions.RequestException as e:
+            return jsonify({'error': f'Erro ao solicitar agenda (lote {lote_num}): {e}'}), 502
 
-    if 'processed' != status_final and 'finaliz' not in status_final and 'complet' not in status_final:
-        return jsonify({'error': f'Agenda ainda nÃ£o finalizou apÃ³s {max_wait}s (status: {status_final}). Tente novamente em instantes.', 'file_id': file_id}), 202
+        rd = r1.json()
+        file_id = rd.get('fileId') or rd.get('id') or rd.get('file_id')
+        if not file_id and isinstance(rd, list) and rd:
+            file_id = rd[0].get('fileId')
+        if not file_id:
+            m = _re.search(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', r1.text)
+            file_id = m.group(0) if m else None
+        if not file_id:
+            return jsonify({'error': f'Resposta inesperada HD (lote {lote_num}): {r1.text[:200]}'}), 502
 
-    # ----- PASSO 3: Baixar o CSV (URL presignada S3) -----
-    csv_content = None
-    csv_filename = f'{file_id}.csv'
-    try:
-        # Obter URL presignada
-        rd_url = http_requests.get(
-            f'{_HD_API_BFF}/advance-receivables-agenda/file/{file_id}/download',
-            headers=hdrs, timeout=30)
-        if rd_url.status_code == 200:
-            file_url = rd_url.json().get('fileUrl') or rd_url.json().get('url')
-            if file_url:
-                # Baixar o CSV da URL S3
-                rd_csv = http_requests.get(file_url, timeout=120)
-                if rd_csv.status_code == 200 and rd_csv.content:
-                    csv_content = rd_csv.content
-                    cd = rd_csv.headers.get('Content-Disposition', '')
-                    if 'filename=' in cd:
-                        csv_filename = cd.split('filename=')[-1].strip().strip('"')
-    except Exception:
-        pass
+        # Polling
+        max_wait, poll_iv, elapsed, status = 180, 8, 0, 'processando'
+        while elapsed < max_wait:
+            _time.sleep(poll_iv); elapsed += poll_iv
+            try:
+                rs = http_requests.get(f'{_HD_API_BFF}/advance-receivables-agenda',
+                    params={'sort':'DESC','page':1,'pageSize':20}, headers=hdrs, timeout=15)
+                rs.raise_for_status()
+                items = rs.json().get('data', rs.json()) if isinstance(rs.json(), dict) else rs.json()
+                for item in (items if isinstance(items, list) else []):
+                    if item.get('fileId') == file_id:
+                        status = (item.get('status') or '').lower(); break
+                if status in ('processed',) or 'finaliz' in status or 'complet' in status: break
+                if 'erro' in status or 'fail' in status:
+                    return jsonify({'error': f'Agenda falhou (lote {lote_num}): {status}'}), 502
+            except Exception:
+                pass
 
-    if not csv_content:
-        return jsonify({'error': 'NÃ£o foi possÃ­vel baixar o CSV da agenda. Verifique no HeroDash.', 'file_id': file_id}), 502
+        if status not in ('processed',) and 'finaliz' not in status and 'complet' not in status:
+            return jsonify({'error': f'Agenda nao finalizou (lote {lote_num}) apos {max_wait}s.', 'file_id': file_id}), 202
 
-    # ----- PASSO 4: Upload no SimplificaÃŠ -----
+        # Download CSV (presigned URL)
+        try:
+            ru = http_requests.get(f'{_HD_API_BFF}/advance-receivables-agenda/file/{file_id}/download',
+                headers=hdrs, timeout=30)
+            ru.raise_for_status()
+            url = ru.json().get('fileUrl') or ru.json().get('url')
+            if not url:
+                return jsonify({'error': f'URL de download nao encontrada (lote {lote_num}).'}), 502
+            rc = http_requests.get(url, timeout=120)
+            rc.raise_for_status()
+            if rc.content: all_csv.append(rc.content)
+        except Exception as e:
+            return jsonify({'error': f'Erro ao baixar CSV (lote {lote_num}): {e}'}), 502
+
+    if not all_csv:
+        return jsonify({'error': 'Nenhum CSV obtido do HeroDash.'}), 502
+
+    csv_content = b'\n'.join(all_csv)
+
+    # Upload
     sid = datetime.now().strftime('%Y%m%d_%H%M%S')
     fpath = os.path.join(UPLOAD_DIR, f'{sid}_0.csv')
     with open(fpath, 'wb') as fout:
@@ -17586,44 +17562,14 @@ def hd_cotacao_rapida():
 
     records = parse_agenda(fpath)
     if not records:
-        return jsonify({'error': 'CSV baixado, mas nenhum registro encontrado. Verifique o formato da agenda.'}), 422
+        return jsonify({'error': 'CSV baixado mas nenhum registro encontrado.'}), 422
 
-    raiz_map = load_raizes()
-    empresas = analyze_records(records, raiz_map)
-
-    emp_list = []
-    for name in sorted(empresas.keys(), key=lambda n: empresas[n]['valor'], reverse=True):
-        e = empresas[name]
-        emp_list.append({
-            'nome': name,
-            'cnpjs': len(e['cnpjs']),
-            'urs': e['urs'],
-            'valor': round(e['valor'], 2)
-        })
-
-    sess_data = {
-        'files': [fpath],
-        'file': fpath,
-        'empresas': emp_list,
-        'hd_file_id': file_id,
-        'hd_cnpj': cnpj_raw
-    }
-    with open(os.path.join(UPLOAD_DIR, f'{sid}.json'), 'w') as jf:
-        json.dump(sess_data, jf)
-
-    # ----- PASSO 5: Gerar cotaÃ§Ã£o taxa=0 -----
-    taxa_pct   = 0.0
-    di_periodo = 0.1465
-    out_dir    = os.path.join(OUTPUT_DIR, sid)
-    os.makedirs(out_dir, exist_ok=True)
-
+    raiz_map  = load_raizes()
     raiz_to_emp = {}
     emp_raizes = {}
     for raiz, nome in raiz_map.items():
         nu = nome.upper().strip()
-        if nu not in emp_raizes:
-            emp_raizes[nu] = {'nome': nome, 'raizes': []}
-        emp_raizes[nu]['raizes'].append(raiz)
+        emp_raizes.setdefault(nu, {'nome': nome, 'raizes': []})['raizes'].append(raiz)
     for nu, info in emp_raizes.items():
         for raiz in info['raizes']:
             raiz_to_emp[raiz] = info['nome']
@@ -17632,105 +17578,106 @@ def hd_cotacao_rapida():
         if raiz not in raiz_to_emp:
             raiz_to_emp[raiz] = f'RAIZ_{raiz}'
 
+    empresas_an = analyze_records(records, raiz_map)
+    sess_data = {'files': [fpath], 'file': fpath,
+                 'empresas': [{'nome': n, 'cnpjs': len(e['cnpjs']), 'urs': e['urs'], 'valor': round(e['valor'],2)}
+                              for n, e in sorted(empresas_an.items(), key=lambda x: x[1]['valor'], reverse=True)],
+                 'hd_cnpjs': cnpjs}
+    with open(os.path.join(UPLOAD_DIR, f'{sid}.json'), 'w') as jf:
+        json.dump(sess_data, jf)
+
     empresa_records = {}
     for r in records:
         emp = raiz_to_emp.get(r.get('raiz', ''), 'OUTROS')
-        if emp not in empresa_records:
-            empresa_records[emp] = []
-        empresa_records[emp].append(r)
+        empresa_records.setdefault(emp, []).append(r)
 
-    generated = []
+    taxa_pct  = 0.0
+    di_periodo = 0.1465
+    out_dir    = os.path.join(OUTPUT_DIR, sid)
+    os.makedirs(out_dir, exist_ok=True)
+    generated  = []
+    cfg_email  = load_email_config()
+
     for emp_nome, emp_recs in empresa_records.items():
-        safe = emp_nome.replace('/', '_').replace('\\', '_').replace(' ', '_')[:40]
+        safe    = emp_nome.replace('/','_').replace('\\','_').replace(' ','_')[:40]
         emp_out = os.path.join(out_dir, safe)
         os.makedirs(emp_out, exist_ok=True)
         cotacao_path = os.path.join(emp_out, f'Cotacao_COMPLETO_{safe}.xlsx')
+        emp_result = {'empresa': emp_nome, 'safe_name': safe, 'urs': len(emp_recs)}
+
         try:
-            generate_cotacao(
-                emp_recs, emp_nome, taxa_pct / 100.0, di_periodo,
-                {}, cotacao_path
-            )
-            generated.append({'empresa': emp_nome, 'safe_name': safe, 'urs': len(emp_recs)})
+            generate_cotacao(emp_recs, emp_nome, taxa_pct/100.0, di_periodo, {}, cotacao_path)
         except Exception as ex:
-            generated.append({'empresa': emp_nome, 'safe_name': safe, 'error': str(ex)})
+            emp_result['error'] = str(ex)
+            generated.append(emp_result)
+            continue
 
-    result = {
-        'session_id': sid,
-        'file_id': file_id,
-        'cnpj': cnpj_raw,
-        'records': len(records),
-        'empresas': generated,
-        'taxa_pct': taxa_pct
-    }
+        if enviar_email and cfg_email.get('smtp_user') and cfg_email.get('smtp_pass'):
+            # Descobrir raiz da empresa
+            raiz_emp = next((r for r, n in raiz_to_emp.items() if n == emp_nome), None)
+            emails_dest = (cnpj_email_map.get(raiz_emp) or []) if raiz_emp else []
+            if not emails_dest:
+                saved = {}
+                if os.path.exists(EMAIL_DEST_FILE):
+                    try:
+                        with open(EMAIL_DEST_FILE) as f: saved = json.load(f)
+                    except Exception: pass
+                v = saved.get(emp_nome) or saved.get(emp_nome.upper())
+                if v: emails_dest = v if isinstance(v, list) else [v]
 
-    # ----- PASSO 6 (opcional): Enviar email -----
-    if enviar_email and email_cliente and generated:
-        email_errors = []
-        cfg = load_email_config()
-        if cfg.get('smtp_user') and cfg.get('smtp_pass'):
-            for emp_info in generated:
-                if emp_info.get('error'):
-                    continue
+            if emails_dest:
                 try:
-                    with app.test_request_context():
-                        from flask import request as _req
-                    send_payload = {
-                        'session_id': sid,
-                        'empresa': emp_info['empresa'],
-                        'safe_name': emp_info['safe_name'],
-                        'to_email': email_cliente,
-                        'taxa_pct': taxa_pct,
-                        'perfil_cliente': 'taxa_zero',
-                        'operator_email': operator_email,
-                        'urs': emp_info['urs'],
-                        'valor_total': sum(r.get('disponivel', 0) for r in empresa_records.get(emp_info['empresa'], [])),
-                        'valor_operavel': sum(r.get('disponivel', 0) for r in empresa_records.get(emp_info['empresa'], []))
-                    }
-                    # Chama a funÃ§Ã£o de envio diretamente (sem HTTP)
-                    safe = emp_info['safe_name']
-                    emp_out = os.path.join(out_dir, safe)
-                    attach_path = None
-                    if os.path.exists(emp_out):
-                        for fname in sorted(os.listdir(emp_out)):
-                            if fname.startswith('Cotacao_') and fname.endswith('.xlsx'):
-                                attach_path = os.path.join(emp_out, fname)
-                                break
-
-                    msg = MIMEMultipart()
-                    msg['From'] = cfg['smtp_user']
-                    msg['To'] = email_cliente
-                    msg['Subject'] = f'CotaÃ§Ã£o AntecipaÃ§Ã£o de RecebÃ­veis â€” {emp_info["empresa"]} â€” {datetime.now().strftime("%d/%m/%Y")}'
-                    body = (
-                        f'Prezado(a),\n\n'
-                        f'Segue em anexo a cotaÃ§Ã£o de antecipaÃ§Ã£o de recebÃ­veis para {emp_info["empresa"]}, '
-                        f'referente Ã  agenda de hoje ({datetime.now().strftime("%d/%m/%Y")}).\n\n'
-                        f'Taxa: indicativa (a confirmar)\n\n'
-                        f'Em caso de dÃºvidas, entre em contato.\n\n'
-                        f'Atenciosamente,\n{operator_email or "Equipe AR PicPay"}'
+                    valor_total = sum(r.get('disponivel', 0) for r in emp_recs)
+                    hoje = datetime.now().strftime('%d/%m/%Y')
+                    def _brl(v): return 'R$ {:,.2f}'.format(v).replace(',','X').replace('.',',').replace('X','.')
+                    subject = '[PicPay AR] Cotacao Indicativa - {} - {}'.format(emp_nome, hoje)
+                    body_html = (
+                        '<html><body style="font-family:Arial,sans-serif;color:#212121;max-width:600px;margin:0 auto;">'
+                        '<div style="background:#1B5E20;padding:20px 24px;border-radius:8px 8px 0 0;">'
+                        '<h2 style="color:white;margin:0;font-size:20px;">PicPay - Antecipacao de Recebiveis</h2>'
+                        '<p style="color:#C8E6C9;margin:4px 0 0;font-size:13px;">' + hoje + '</p></div>'
+                        '<div style="background:#F9FBE7;padding:20px 24px;border:1px solid #E0E0E0;border-top:none;">'
+                        '<p style="font-size:15px;">Ola,</p>'
+                        '<p style="font-size:15px;">Segue cotacao indicativa disponivel para antecipacao.</p>'
+                        '<div style="background:white;border:1px solid #E0E0E0;border-radius:8px;padding:16px 20px;margin:16px 0;">'
+                        '<table style="width:100%;border-collapse:collapse;">'
+                        '<tr><td style="padding:8px 0;font-size:13px;color:#757575;">Agenda disponivel</td>'
+                        '<td style="padding:8px 0;font-size:15px;font-weight:bold;text-align:right;">' + _brl(valor_total) + '</td></tr>'
+                        '<tr><td style="padding:8px 0;font-size:13px;color:#757575;">Taxa indicativa</td>'
+                        '<td style="padding:8px 0;font-size:15px;font-weight:bold;text-align:right;">0,00% a.m. (simulacao)</td></tr>'
+                        '</table></div>'
+                        '<p style="font-size:14px;">Para negociar ou simular sem compromisso, entre em contato:</p>'
+                        '<div style="text-align:center;margin:24px 0;">'
+                        '<a href="mailto:' + (operator_email or cfg_email.get('smtp_user','')) + '" '
+                        'style="background:#4CAF50;color:white;padding:12px 28px;border-radius:6px;'
+                        'text-decoration:none;font-size:14px;font-weight:bold;">Falar com um especialista</a>'
+                        '</div>'
+                        '<p style="font-size:12px;color:#9E9E9E;border-top:1px solid #E0E0E0;padding-top:12px;">'
+                        'Gerado pelo SimplificaE - PicPay AR. Data: ' + hoje + '</p>'
+                        '</div></body></html>'
                     )
-                    msg.attach(MIMEText(body, 'plain', 'utf-8'))
-
-                    if attach_path and os.path.exists(attach_path):
-                        with open(attach_path, 'rb') as af:
-                            part = MIMEBase('application', 'octet-stream')
+                    msg = MIMEMultipart('alternative')
+                    _display = cfg_email.get('display_name', 'PicPay AR') or 'PicPay AR'
+                    msg['From']    = '{} <{}>'.format(_display, cfg_email['smtp_user'])
+                    msg['To']      = ', '.join(emails_dest)
+                    msg['Subject'] = subject
+                    msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+                    if os.path.exists(cotacao_path):
+                        with open(cotacao_path, 'rb') as af:
+                            part = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
                             part.set_payload(af.read())
                         _email_encoders.encode_base64(part)
-                        part.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attach_path)}"')
+                        part.add_header('Content-Disposition', 'attachment; filename="Cotacao_{}.xlsx"'.format(safe))
                         msg.attach(part)
-
-                    err = _smtp_send(cfg, msg, [email_cliente])
-                    if err:
-                        email_errors.append(err)
-                    else:
-                        result.setdefault('emails_enviados', []).append(email_cliente)
+                    err = _smtp_send(cfg_email, msg, emails_dest)
+                    if err: emp_result['email_erro'] = err
+                    else:   emp_result['email_enviado'] = True
                 except Exception as ex:
-                    email_errors.append(str(ex))
-            if email_errors:
-                result['email_errors'] = email_errors
-        else:
-            result['email_aviso'] = 'Email nÃ£o configurado no SimplificaÃŠ. Configure em ConfiguraÃ§Ãµes â†’ Email.'
+                    emp_result['email_erro'] = str(ex)
 
-    return jsonify(result)
+        generated.append(emp_result)
+
+    return jsonify({'session_id': sid, 'records': len(records), 'empresas': generated, 'taxa_pct': taxa_pct})
 
 
 @app.route('/herodash/status/<file_id>', methods=['GET'])
@@ -17738,9 +17685,9 @@ def hd_status_agenda(file_id):
     """Verifica status de uma agenda em processamento no HeroDash."""
     hdrs = _hd_headers()
     if not hdrs:
-        return jsonify({'error': 'Token HeroDash nÃ£o encontrado.'}), 401
+        return jsonify({'error': 'Token HeroDash não encontrado.'}), 401
     if http_requests is None:
-        return jsonify({'error': 'requests nÃ£o instalado'}), 500
+        return jsonify({'error': 'requests não instalado'}), 500
     try:
         r = http_requests.get(
             f'{_HD_API_BFF}/advance-receivables-agenda',
@@ -17762,13 +17709,13 @@ def hd_status_agenda(file_id):
 
 @app.route('/herodash/token_status', methods=['GET'])
 def hd_token_status():
-    """DiagnÃ³stico do token HeroDash."""
+    """Diagnóstico do token HeroDash."""
     tok = _hd_token()
     if not tok:
         candidates_info = []
         for p in _HD_TOKEN_CANDIDATES:
             candidates_info.append({'path': p, 'exists': os.path.exists(p)})
-        return jsonify({'ok': False, 'error': 'Token nÃ£o encontrado', 'candidates': candidates_info})
+        return jsonify({'ok': False, 'error': 'Token não encontrado', 'candidates': candidates_info})
     # Decodificar payload JWT sem verificar assinatura
     try:
         import base64
@@ -17815,14 +17762,13 @@ if __name__ == '__main__':
 
     _warmup_databricks()
 
-    # Verificar atualizaÃ§Ãµes em background (nÃ£o bloqueia startup)
+    # Verificar atualizações em background (não bloqueia startup)
     if _UPDATER_OK:
         _updater.check_update_async()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
-
 
 
 
