@@ -45,6 +45,11 @@ import zipfile
 
 
 import time
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders as _email_encoders
 
 
 
@@ -980,6 +985,227 @@ from collections import OrderedDict
 
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CALCULADORA AR — leitura de curvas/feriados e cálculo de indicadores
+# ─────────────────────────────────────────────────────────────────────────────
+_ar_curvas_cache = None
+_ar_curvas_cache_ts = None
+_AR_PLANILHA = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calculadora_ar.xlsx')
+_AR_CDI_DEFAULT = 0.1465  # 14.65% a.a. — fallback se planilha indisponível
+
+
+def carregar_curvas_ar(forcar=False):
+    """
+    Lê as abas 'Curva Mensal' e 'Feriados' da calculadora_ar.xlsx.
+    Retorna (curvas_dict, feriados_set, aviso) onde:
+      curvas_dict  : {prazo_du (int): {'cdi_du': float, 'cof_am': float}}
+      feriados_set : set de datetime.date
+      aviso        : str ou None
+    Cacheia por 12 horas.
+    """
+    global _ar_curvas_cache, _ar_curvas_cache_ts
+    agora = datetime.now()
+    if (not forcar and _ar_curvas_cache is not None and _ar_curvas_cache_ts is not None
+            and (agora - _ar_curvas_cache_ts).total_seconds() < 43200):
+        return _ar_curvas_cache
+
+    curvas_dict = {}
+    feriados_set = set()
+    aviso = None
+
+    try:
+        if not os.path.exists(_AR_PLANILHA):
+            raise FileNotFoundError('calculadora_ar.xlsx não encontrada')
+        import openpyxl
+        wb = openpyxl.load_workbook(_AR_PLANILHA, read_only=True, data_only=True)
+        # Curva Mensal: A=data, B=dias corridos, C=dias úteis, D=rate aa, E=COF%CDI, F=cdim, G=CDI base
+        ws_curva = wb['Curva Mensal']
+        for row in ws_curva.iter_rows(min_row=2, values_only=True):
+            if row[2] is None:
+                continue
+            try:
+                prazo_du = int(row[2])
+                cdi_du   = float(row[6]) / 100.0 if row[6] is not None else _AR_CDI_DEFAULT / 252
+                cof_am   = float(row[4]) / 100.0 if row[4] is not None else 0.0
+                if prazo_du > 0:
+                    curvas_dict[prazo_du] = {'cdi_du': cdi_du, 'cof_am': cof_am}
+            except (TypeError, ValueError):
+                continue
+        # Feriados: A=data
+        ws_fer = wb['Feriados']
+        for row in ws_fer.iter_rows(min_row=2, values_only=True):
+            if row[0] is None:
+                continue
+            try:
+                feriados_set.add(row[0].date() if hasattr(row[0], 'date') else row[0])
+            except Exception:
+                continue
+        wb.close()
+    except Exception as e:
+        aviso = f'Curvas AR indisponíveis ({e}). Usando CDI default {_AR_CDI_DEFAULT*100:.2f}% a.a.'
+        cdi_diario = (1 + _AR_CDI_DEFAULT) ** (1 / 252) - 1
+        for du in range(1, 365):
+            cdi_acum = (1 + cdi_diario) ** du - 1
+            curvas_dict[du] = {'cdi_du': cdi_acum, 'cof_am': cdi_acum * 0.85}
+
+    _ar_curvas_cache = (curvas_dict, feriados_set, aviso)
+    _ar_curvas_cache_ts = agora
+    return _ar_curvas_cache
+
+
+def calcular_indicadores_ar(records, taxa_nominal_am, custos_cerc_fixos=0.0, data_operacao=None):
+    """
+    Replica os cálculos da Calculadora de Antecipação de Recebíveis.
+
+    Parâmetros:
+      records           lista de dicts do SimplificaÊ
+      taxa_nominal_am   taxa % CDI a.m. (ex: 0.0137 = 1.37%)
+      custos_cerc_fixos custos CERC fixos da operação em R$ (default 0)
+      data_operacao     datetime.date da operação (default: hoje)
+
+    Retorna dict com indicadores ou {'erro': mensagem}.
+    """
+    import datetime as _dt
+
+    if not records:
+        return {'erro': 'Sem URs para calcular.'}
+
+    if data_operacao is None:
+        data_operacao = datetime.now().date()
+    elif hasattr(data_operacao, 'date'):
+        data_operacao = data_operacao.date()
+
+    curvas_dict, feriados_set, aviso_curvas = carregar_curvas_ar()
+
+    def _networkdays(d1, d2):
+        """Conta dias úteis de d1 (exclusive) até d2 (inclusive), excluindo feriados."""
+        if d2 <= d1:
+            return 0
+        count = 0
+        cur = d1
+        one = _dt.timedelta(days=1)
+        while cur < d2:
+            cur += one
+            if cur.weekday() < 5 and cur not in feriados_set:
+                count += 1
+        return count
+
+    def _vlookup(prazo_du):
+        if prazo_du <= 0:
+            return {'cdi_du': 0.0, 'cof_am': 0.0}
+        if prazo_du in curvas_dict:
+            return curvas_dict[prazo_du]
+        menores = [k for k in curvas_dict if k <= prazo_du]
+        if menores:
+            return curvas_dict[max(menores)]
+        return curvas_dict[min(curvas_dict)] if curvas_dict else {'cdi_du': 0.0, 'cof_am': 0.0}
+
+    total_vb = sum_pdc_w = sum_pdu_w = sum_cdi_w = 0.0
+    sum_rb_du_jc = sum_cof_du = 0.0
+    qtd_urs = 0
+
+    for r in records:
+        disponivel = r.get('disponivel') or r.get('valor_bruto') or 0
+        if disponivel <= 0:
+            continue
+        dl_raw = r.get('data_liquidacao', '')
+        try:
+            if hasattr(dl_raw, 'date'):
+                dl = dl_raw.date()
+            elif isinstance(dl_raw, str) and dl_raw:
+                from dateutil import parser as dparser
+                dl = dparser.parse(dl_raw).date()
+            else:
+                continue
+        except Exception:
+            continue
+        if dl <= data_operacao:
+            continue
+
+        prazo_dc = (dl - data_operacao).days
+        prazo_du = _networkdays(data_operacao, dl)
+        if prazo_du <= 0 or prazo_dc <= 0:
+            continue
+
+        curva  = _vlookup(prazo_du)
+        cdi_du = curva['cdi_du']
+        cof_am = curva['cof_am']
+
+        rb_du_jc = ((1 + taxa_nominal_am) ** (prazo_du / 21) - 1) * disponivel
+        cof_du   = -disponivel * ((1 + cof_am) ** (prazo_du / 21) - 1)
+
+        total_vb    += disponivel
+        sum_pdc_w   += prazo_dc * disponivel
+        sum_pdu_w   += prazo_du * disponivel
+        sum_cdi_w   += cdi_du   * disponivel
+        sum_rb_du_jc += rb_du_jc
+        sum_cof_du  += cof_du
+        qtd_urs     += 1
+
+    if total_vb <= 0:
+        return {'erro': 'Nenhuma UR válida com valor disponível.'}
+
+    prazo_medio_dc = sum_pdc_w / total_vb
+    prazo_medio_du = sum_pdu_w / total_vb
+    cdi_curva_du   = sum_cdi_w / total_vb
+    cdi_am_du      = (1 + cdi_curva_du) ** (21 / 252) - 1 if cdi_curva_du > 0 else 0.0
+    pct_cdi        = taxa_nominal_am / cdi_am_du             if cdi_am_du > 0 else 0.0
+
+    receita_bruta = sum_rb_du_jc
+    cof_total     = sum_cof_du
+    imposto       = max(0.0, receita_bruta + cof_total) * -0.0465
+    receita_liq   = receita_bruta + cof_total + imposto
+    margem        = receita_liq - abs(custos_cerc_fixos)
+    yield_margem  = margem / total_vb if total_vb > 0 else 0.0
+
+    capital_alocado = total_vb - receita_bruta
+    giro_ano        = 252.0 / prazo_medio_du if prazo_medio_du > 0 else 0.0
+
+    if capital_alocado > 0 and prazo_medio_du > 0:
+        roic_aa       = (1 + (margem - cof_total) / capital_alocado) ** (252 / prazo_medio_du) - 1
+        custo_capital = (1 + abs(cof_total) / capital_alocado)       ** (252 / prazo_medio_du) - 1
+    else:
+        roic_aa = custo_capital = 0.0
+
+    criacao_valor = roic_aa - custo_capital
+
+    if criacao_valor < 0:
+        semaforo, semaforo_cor = 'Recusar',   '#D32F2F'
+    elif criacao_valor < 0.0075:
+        semaforo, semaforo_cor = 'Avaliar',   '#F57C00'
+    elif criacao_valor < 0.02:
+        semaforo, semaforo_cor = 'Aceitar',   '#388E3C'
+    else:
+        semaforo, semaforo_cor = 'Priorizar', '#1B5E20'
+
+    return {
+        'volume_total':    round(total_vb, 2),
+        'qtd_urs':         qtd_urs,
+        'prazo_medio_dc':  round(prazo_medio_dc, 1),
+        'prazo_medio_du':  round(prazo_medio_du, 1),
+        'cdi_curva_du':    round(cdi_curva_du, 6),
+        'cdi_am_du':       round(cdi_am_du, 6),
+        'pct_cdi':         round(pct_cdi, 4),
+        'taxa_nominal_am': round(taxa_nominal_am, 6),
+        'receita_bruta':   round(receita_bruta, 2),
+        'cof_total':       round(cof_total, 2),
+        'imposto':         round(imposto, 2),
+        'receita_liquida': round(receita_liq, 2),
+        'custos_cerc':     round(-abs(custos_cerc_fixos), 2),
+        'margem':          round(margem, 2),
+        'yield_margem':    round(yield_margem, 6),
+        'capital_alocado': round(capital_alocado, 2),
+        'giro_ano':        round(giro_ano, 2),
+        'roic_aa':         round(roic_aa, 6),
+        'custo_capital':   round(custo_capital, 6),
+        'criacao_valor':   round(criacao_valor, 6),
+        'semaforo':        semaforo,
+        'semaforo_cor':    semaforo_cor,
+        'aviso_curvas':    aviso_curvas,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
                         seller_map, output_path, ineligible_cnpjs=None, missing_cnpjs=None):
@@ -5539,7 +5765,6 @@ HTML_TEMPLATE = '''
                         <tr id="hd-row-0">
                             <td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">
                                 <input type="text" class="hd-cnpj-input" placeholder="17678232" maxlength="18"
-                                    onblur="var v=this.value.replace(/[.\/-]/g,'').trim();if(v&&document.getElementById('hd-use-raiz').checked&&v.length>0&&v.length<8){v=v.padStart(8,'0');}this.value=v;"
                                     style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
                             </td>
                             <td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">
@@ -5596,7 +5821,7 @@ HTML_TEMPLATE = '''
             var tr=document.createElement('tr'); tr.id='hd-row-'+idx;
             tr.innerHTML='<td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">'
                 +'<input type="text" class="hd-cnpj-input" placeholder="17678232" maxlength="18"'
-                +' onblur="var v=this.value.replace(/[.\\/\\-]/g,\'\').trim();if(v&&document.getElementById(\'hd-use-raiz\').checked&&v.length>0&&v.length<8){v=v.padStart(8,\'0\');}this.value=v;"'
+                +'<input type="text" class="hd-cnpj-input" placeholder="17678232 (8 digitos)" maxlength="18"'
                 +' style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></td>'
                 +'<td style="padding:6px 8px;border:1px solid #e0e0e0;vertical-align:top;">'
                 +'<div class="hd-emails-list"><div style="display:flex;gap:6px;margin-bottom:4px;">'
@@ -5952,10 +6177,31 @@ HTML_TEMPLATE = '''
 
 
 
-        <!-- Step 6: Personalizar -->
+        <!-- Step 6: Calculadora AR -->
+        <div class="card hidden" id="step-calc-ar" style="border-left:4px solid #1B5E20;">
+            <h2>6. Calculadora de Antecipação</h2>
+            <p style="color:#555;font-size:13px;margin-bottom:14px;">Simule a rentabilidade da operação com base nas URs carregadas. Ajuste a taxa e veja o impacto em tempo real.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;">
+                <div>
+                    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">Taxa % CDI (a.m.)</label>
+                    <input type="number" id="ar-taxa-input" value="1.37" min="0.01" max="50" step="0.01"
+                           style="width:110px;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;"
+                           oninput="debounceCalcAR()">
+                    <span style="font-size:13px;color:#555;margin-left:4px;">%</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="setArTaxa(1.10)">1,10%</button>
+                    <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="setArTaxa(1.22)">1,22%</button>
+                    <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="setArTaxa(1.37)">1,37%</button>
+                    <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="setArTaxa(1.50)">1,50%</button>
+                </div>
+            </div>
+            <div id="ar-calc-result" style="min-height:60px;">
+                <span style="color:#9E9E9E;font-size:13px;">Aguardando cálculo...</span>
+            </div>
+        </div>
 
-
-
+        <!-- Step 7: Personalizar -->
         <div class="card hidden" id="step-custom">
 
 
@@ -8153,6 +8399,9 @@ HTML_TEMPLATE = '''
 
 
                 document.getElementById('step-results').classList.remove('hidden');
+                // Mostrar calculadora AR e disparar cálculo inicial
+                var _arCard = document.getElementById('step-calc-ar');
+                if (_arCard) { _arCard.classList.remove('hidden'); setTimeout(calcularAR, 300); }
 
 
 
@@ -10755,7 +11004,79 @@ HTML_TEMPLATE = '''
 
 
 
-        function downloadAll() {
+        
+        // ── CALCULADORA AR ────────────────────────────────────────────────
+        var _arDebounceTimer = null;
+        function debounceCalcAR() {
+            clearTimeout(_arDebounceTimer);
+            _arDebounceTimer = setTimeout(calcularAR, 500);
+        }
+
+        function setArTaxa(pct) {
+            var inp = document.getElementById('ar-taxa-input');
+            if (inp) { inp.value = pct.toFixed(2); calcularAR(); }
+        }
+
+        function calcularAR() {
+            if (!sessionId) return;
+            var taxaStr = (document.getElementById('ar-taxa-input') || {}).value || '1.37';
+            var taxaAm  = parseFloat(taxaStr) / 100.0;
+            if (isNaN(taxaAm) || taxaAm <= 0) return;
+
+            var el = document.getElementById('ar-calc-result');
+            if (!el) return;
+            el.innerHTML = '<span class="loader" style="width:16px;height:16px;border-width:2px;"></span> <span style="font-size:13px;color:#555;">Calculando...</span>';
+
+            fetch('/calcular_ar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_id: sessionId, taxa_nominal_am: taxaAm})
+            })
+            .then(r => r.json())
+            .then(function(d) {
+                if (d.erro) {
+                    el.innerHTML = '<span style="color:#C62828;font-size:13px;">Erro: ' + d.erro + '</span>';
+                    return;
+                }
+                var semCor = d.semaforo_cor || '#388E3C';
+                var semTxt = d.semaforo || '-';
+                var aviso  = d.aviso_curvas ? '<div style="color:#F57C00;font-size:11px;margin-top:8px;">⚠ ' + d.aviso_curvas + '</div>' : '';
+
+                function fBRL(v)  { return (v||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+                function fPct(v)  { return ((v||0)*100).toFixed(2) + '%'; }
+                function fPct4(v) { return ((v||0)*100).toFixed(4) + '%'; }
+
+                el.innerHTML =
+                  '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">' +
+                    '<div style="flex:0 0 auto;text-align:center;padding:12px 20px;border-radius:8px;background:' + semCor + ';color:white;font-size:22px;font-weight:700;min-width:110px;">' +
+                      semTxt +
+                      '<div style="font-size:11px;font-weight:400;margin-top:2px;">Criação de Valor<br>' + fPct4(d.criacao_valor) + '</div>' +
+                    '</div>' +
+                    '<div style="flex:1 1 260px;">' +
+                      '<table style="font-size:12px;border-collapse:collapse;width:100%;">' +
+                        '<tr><td style="padding:3px 10px 3px 0;color:#555;">Volume</td><td style="font-weight:600;">' + fBRL(d.volume_total) + '</td>' +
+                             '<td style="padding:3px 10px 3px 16px;color:#555;">Qtd URs</td><td>' + (d.qtd_urs||0).toLocaleString('pt-BR') + '</td></tr>' +
+                        '<tr><td style="padding:3px 10px 3px 0;color:#555;">Prazo Médio DC</td><td>' + (d.prazo_medio_dc||0).toFixed(1) + ' dias</td>' +
+                             '<td style="padding:3px 10px 3px 16px;color:#555;">Prazo Médio DU</td><td>' + (d.prazo_medio_du||0).toFixed(1) + ' DU</td></tr>' +
+                        '<tr><td style="padding:3px 10px 3px 0;color:#555;">% CDI</td><td style="color:#1B5E20;font-weight:600;">' + fPct(d.pct_cdi) + ' CDI</td>' +
+                             '<td style="padding:3px 10px 3px 16px;color:#555;">CDI a.m.</td><td>' + fPct4(d.cdi_am_du) + '</td></tr>' +
+                        '<tr><td style="padding:3px 10px 3px 0;color:#555;">Receita Bruta</td><td style="color:#1B5E20;font-weight:600;">' + fBRL(d.receita_bruta) + '</td>' +
+                             '<td style="padding:3px 10px 3px 16px;color:#555;">COF</td><td style="color:#C62828;">' + fBRL(d.cof_total) + '</td></tr>' +
+                        '<tr><td style="padding:3px 10px 3px 0;color:#555;">Margem</td><td style="font-weight:600;">' + fBRL(d.margem) + '</td>' +
+                             '<td style="padding:3px 10px 3px 16px;color:#555;">Yield Margem</td><td>' + fPct4(d.yield_margem) + '</td></tr>' +
+                        '<tr><td style="padding:3px 10px 3px 0;color:#555;">ROIC a.a.</td><td>' + fPct(d.roic_aa) + '</td>' +
+                             '<td style="padding:3px 10px 3px 16px;color:#555;">Custo Capital</td><td>' + fPct(d.custo_capital) + '</td></tr>' +
+                      '</table>' +
+                    '</div>' +
+                  '</div>' + aviso;
+            })
+            .catch(function(err) {
+                el.innerHTML = '<span style="color:#C62828;font-size:13px;">Erro de comunicação: ' + err + '</span>';
+            });
+        }
+        // ── FIM CALCULADORA AR ─────────────────────────────────────────────
+
+function downloadAll() {
 
 
 
@@ -16591,6 +16912,46 @@ def save_history_entry(entry):
 
 
 
+@app.route('/calcular_ar', methods=['POST'])
+def calcular_ar():
+    """
+    Calcula indicadores da Calculadora AR para a sessão ativa.
+    Body JSON: { "session_id": "...", "taxa_nominal_am": 0.0137, "custos_cerc": 0.0 }
+    Retorna JSON com todos os indicadores de rentabilidade.
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        session_id = data.get('session_id') or request.args.get('session_id')
+        taxa_raw   = data.get('taxa_nominal_am', 0.0137)
+        cerc_fixo  = float(data.get('custos_cerc', 0.0) or 0.0)
+
+        try:
+            taxa_nominal_am = float(taxa_raw)
+        except (TypeError, ValueError):
+            return jsonify({'erro': 'taxa_nominal_am inválida'}), 400
+
+        if taxa_nominal_am <= 0 or taxa_nominal_am > 0.5:
+            return jsonify({'erro': 'taxa_nominal_am fora do intervalo válido (0–50%)'}), 400
+
+        # Buscar records da sessão
+        records = []
+        if session_id and session_id in sessions:
+            sess = sessions[session_id]
+            records = sess.get('records', [])
+        elif session_id and session_id in custom_sessions:
+            records = custom_sessions[session_id].get('records', [])
+
+        if not records:
+            return jsonify({'erro': 'Sessão não encontrada ou sem URs carregadas.'}), 404
+
+        resultado = calcular_indicadores_ar(records, taxa_nominal_am, custos_cerc_fixos=cerc_fixo)
+        return jsonify(resultado)
+
+    except Exception as e:
+        app.logger.exception('Erro em /calcular_ar')
+        return jsonify({'erro': str(e)}), 500
+
+
 @app.route('/history')
 
 
@@ -16783,6 +17144,46 @@ EMAIL_HISTORY_FILE = os.path.join(BASE_DIR, 'email_history.json')
 
 EMAIL_DEST_FILE = os.path.join(BASE_DIR, 'email_destinatarios.json')
 
+
+
+def _smtp_send(cfg, msg_obj, to_list):
+    """Envia e-mail tentando automaticamente 587/STARTTLS e 465/SSL.
+    Ignora a porta salva na config — testa na ordem que funcionar na rede atual.
+    Salva a porta que funcionou no email_config.json para proximas chamadas.
+    Retorna None se OK, ou string de erro se falhou nas duas portas.
+    """
+    host = cfg.get('smtp_host', 'smtp.gmail.com')
+    user = cfg['smtp_user']
+    pwd  = cfg['smtp_pass']
+
+    saved_port = int(cfg.get('smtp_port', 587))
+    attempts = [(465, 'ssl'), (587, 'starttls')] if saved_port == 465 else [(587, 'starttls'), (465, 'ssl')]
+
+    last_err = None
+    for port, mode in attempts:
+        try:
+            if mode == 'ssl':
+                with smtplib.SMTP_SSL(host, port, timeout=20) as srv:
+                    srv.login(user, pwd)
+                    srv.send_message(msg_obj, user, to_list)
+            else:
+                with smtplib.SMTP(host, port, timeout=20) as srv:
+                    srv.ehlo(); srv.starttls(); srv.ehlo()
+                    srv.login(user, pwd)
+                    srv.send_message(msg_obj, user, to_list)
+            if port != saved_port:
+                try:
+                    cfg2 = load_email_config()
+                    cfg2['smtp_port'] = port
+                    with open(EMAIL_CONFIG_FILE, 'w') as f:
+                        import json as _json; _json.dump(cfg2, f, indent=2)
+                except Exception:
+                    pass
+            return None
+        except Exception as e:
+            last_err = str(e)
+            continue
+    return last_err
 
 
 def load_email_config():
