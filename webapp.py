@@ -16760,6 +16760,56 @@ EMAIL_HISTORY_FILE = os.path.join(BASE_DIR, 'email_history.json')
 EMAIL_DEST_FILE = os.path.join(BASE_DIR, 'email_destinatarios.json')
 
 
+def _smtp_send(cfg, msg_obj, to_list):
+    """Envia e-mail tentando automaticamente 587/STARTTLS e 465/SSL.
+    
+    Ignora a porta salva na config — testa na ordem que funcionar na rede atual.
+    Salva a porta que funcionou no email_config.json para otimizar próximas chamadas.
+    
+    Retorna None se OK, ou string de erro se falhou nas duas portas.
+    """
+    host = cfg.get('smtp_host', 'smtp.gmail.com')
+    user = cfg['smtp_user']
+    pwd  = cfg['smtp_pass']
+    sender = user
+
+    # Ordem de tentativa: porta salva primeiro, depois a alternativa
+    saved_port = int(cfg.get('smtp_port', 587))
+    if saved_port == 465:
+        attempts = [(465, 'ssl'), (587, 'starttls')]
+    else:
+        attempts = [(587, 'starttls'), (465, 'ssl')]
+
+    last_err = None
+    for port, mode in attempts:
+        try:
+            if mode == 'ssl':
+                with smtplib.SMTP_SSL(host, port, timeout=20) as srv:
+                    srv.login(user, pwd)
+                    srv.send_message(msg_obj, sender, to_list)
+            else:
+                with smtplib.SMTP(host, port, timeout=20) as srv:
+                    srv.ehlo()
+                    srv.starttls()
+                    srv.ehlo()
+                    srv.login(user, pwd)
+                    srv.send_message(msg_obj, sender, to_list)
+            # Funcionou — salvar a porta que funcionou se for diferente da salva
+            if port != saved_port:
+                try:
+                    cfg2 = load_email_config()
+                    cfg2['smtp_port'] = port
+                    with open(EMAIL_CONFIG_FILE, 'w') as f:
+                        json.dump(cfg2, f, indent=2)
+                except Exception:
+                    pass
+            return None  # sucesso
+        except Exception as e:
+            last_err = str(e)
+            continue
+
+    return last_err  # falhou nas duas
+
 
 def load_email_config():
 
@@ -17088,23 +17138,12 @@ def send_email_route():
 
 
     try:
-
-        with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port']) as srv:
-
-            srv.starttls()
-
-            srv.login(cfg['smtp_user'], cfg['smtp_pass'])
-
-            # send_message() é o método correto para objetos MIME —
-            # nunca tenta encodar em ASCII, suporta qualquer caractere Unicode
-            srv.send_message(msg, cfg['smtp_user'], to_emails_list)
-
+        err = _smtp_send(cfg, msg, to_emails_list)
+        if err:
+            return jsonify({'error': 'Falha ao enviar: {}'.format(err)}), 500
         status_e = 'enviado'
-
         error_e  = None
-
     except Exception as ex:
-
         return jsonify({'error': 'Falha ao enviar: {}'.format(str(ex))}), 500
 
 
@@ -17688,20 +17727,11 @@ def hd_cotacao_rapida():
                         part.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attach_path)}"')
                         msg.attach(part)
 
-                    smtp_host = cfg.get('smtp_host', 'smtp.gmail.com')
-                    smtp_port = int(cfg.get('smtp_port', 587))
-                    if smtp_port == 465:
-                        with smtplib.SMTP_SSL(smtp_host, smtp_port) as srv:
-                            srv.login(cfg['smtp_user'], cfg['smtp_pass'])
-                            srv.sendmail(cfg['smtp_user'], [email_cliente], msg.as_bytes())
+                    err = _smtp_send(cfg, msg, [email_cliente])
+                    if err:
+                        email_errors.append(err)
                     else:
-                        with smtplib.SMTP(smtp_host, smtp_port) as srv:
-                            srv.ehlo()
-                            srv.starttls()
-                            srv.login(cfg['smtp_user'], cfg['smtp_pass'])
-                            srv.sendmail(cfg['smtp_user'], [email_cliente], msg.as_bytes())
-
-                    result.setdefault('emails_enviados', []).append(email_cliente)
+                        result.setdefault('emails_enviados', []).append(email_cliente)
                 except Exception as ex:
                     email_errors.append(str(ex))
             if email_errors:
