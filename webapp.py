@@ -17688,9 +17688,18 @@ def hd_cotacao_rapida():
                         part.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attach_path)}"')
                         msg.attach(part)
 
-                    with smtplib.SMTP_SSL(cfg.get('smtp_host', 'smtp.gmail.com'), int(cfg.get('smtp_port', 465))) as srv:
-                        srv.login(cfg['smtp_user'], cfg['smtp_pass'])
-                        srv.sendmail(cfg['smtp_user'], [email_cliente], msg.as_bytes())
+                    smtp_host = cfg.get('smtp_host', 'smtp.gmail.com')
+                    smtp_port = int(cfg.get('smtp_port', 587))
+                    if smtp_port == 465:
+                        with smtplib.SMTP_SSL(smtp_host, smtp_port) as srv:
+                            srv.login(cfg['smtp_user'], cfg['smtp_pass'])
+                            srv.sendmail(cfg['smtp_user'], [email_cliente], msg.as_bytes())
+                    else:
+                        with smtplib.SMTP(smtp_host, smtp_port) as srv:
+                            srv.ehlo()
+                            srv.starttls()
+                            srv.login(cfg['smtp_user'], cfg['smtp_pass'])
+                            srv.sendmail(cfg['smtp_user'], [email_cliente], msg.as_bytes())
 
                     result.setdefault('emails_enviados', []).append(email_cliente)
                 except Exception as ex:
