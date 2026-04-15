@@ -17217,6 +17217,7 @@ def get_email_destinatarios():
 
 # Token do HeroDash — lido do arquivo salvo pelo plugin herodash-connector
 _HD_API_BASE   = 'https://herodash-api.picpay.com/api/v1'
+_HD_API_BFF    = 'https://herodash-api.picpay.com/api/v1/herodash-bff'
 _HD_SELLER_SVC = 'https://herodash-seller-service-bff.picpay.com/api/v1'
 
 # Possíveis locais do arquivo de token salvo pelo plugin herodash-connector
@@ -17300,31 +17301,52 @@ def _hd_search_seller(cnpj_or_raiz):
         return None, str(e)
 
 def _hd_gerar_agenda(cnpj_raiz, use_raiz=True):
-    """Solicita geração de agenda no HD. Retorna file_id ou erro."""
+    """Solicita geração de agenda no HD. Retorna file_id ou erro.
+    
+    Nova API (herodash-bff):
+    POST /herodash-bff/advance-receivables-agenda
+    Body: {"cnpjs": ["14digits"], "rootCnpjs": []} ou {"cnpjs": [], "rootCnpjs": ["8digits"]}
+    """
     if http_requests is None:
         return None, 'requests nao instalado'
     hdrs = _hd_headers()
     if not hdrs:
         return None, 'Token HeroDash nao encontrado.'
     cnpj_fmt = cnpj_raiz.replace('.', '').replace('/', '').replace('-', '')
-    payload = {'cnpjs': [cnpj_fmt], 'raiz': use_raiz}
+    if use_raiz:
+        payload = {'cnpjs': [], 'rootCnpjs': [cnpj_fmt[:8]]}
+    else:
+        # CNPJ completo deve ter 14 dígitos
+        if len(cnpj_fmt) < 14:
+            cnpj_fmt = cnpj_fmt.zfill(14)
+        payload = {'cnpjs': [cnpj_fmt], 'rootCnpjs': []}
     try:
         r = http_requests.post(
-            f'{_HD_API_BASE}/mesa-ar/agenda-sellers',
+            f'{_HD_API_BFF}/advance-receivables-agenda',
             json=payload,
             headers=hdrs,
             timeout=20
         )
         if r.status_code == 401:
             return None, 'Token HeroDash expirado.'
+        if r.status_code == 404:
+            return None, 'Rota não encontrada. Verifique permissões Mesa AR.'
         r.raise_for_status()
         data = r.json()
-        return data.get('id') or data.get('file_id'), None
+        # Resposta pode ser o objeto da agenda ou lista
+        file_id = data.get('fileId') or data.get('id') or data.get('file_id')
+        if not file_id and isinstance(data, list) and len(data) > 0:
+            file_id = data[0].get('fileId')
+        return file_id, None
     except Exception as e:
         return None, str(e)
 
 def _hd_status_agenda(file_id):
-    """Verifica status da agenda. Retorna (status_str, download_url_or_None)."""
+    """Verifica status da agenda consultando a lista recente.
+    
+    Nova API: GET /herodash-bff/advance-receivables-agenda?sort=DESC&page=1&pageSize=10
+    Retorna (status_str, None) — 'processed'/'PROCESSED' quando pronto
+    """
     if http_requests is None:
         return None, None
     hdrs = _hd_headers()
@@ -17332,40 +17354,58 @@ def _hd_status_agenda(file_id):
         return None, None
     try:
         r = http_requests.get(
-            f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}',
+            f'{_HD_API_BFF}/advance-receivables-agenda',
+            params={'sort': 'DESC', 'page': 1, 'pageSize': 20},
             headers=hdrs,
             timeout=15
         )
         r.raise_for_status()
         data = r.json()
-        status = data.get('status', '').lower()
-        url = data.get('download_url') or data.get('url')
-        return status, url
+        items = data.get('data', data) if isinstance(data, dict) else data
+        for item in items:
+            if item.get('fileId') == file_id:
+                status = (item.get('status') or '').lower()
+                return status, None
+        return 'processando', None
     except Exception:
         return None, None
 
 def _hd_download_agenda(file_id):
-    """Baixa o CSV da agenda. Retorna (bytes_content, filename, error)."""
+    """Baixa o CSV da agenda.
+    
+    Nova API: GET /herodash-bff/advance-receivables-agenda/file/{fileId}/download
+    Retorna (bytes_content, filename, error)
+    """
     if http_requests is None:
         return None, None, 'requests nao instalado'
     hdrs = _hd_headers()
     if not hdrs:
         return None, None, 'Token HeroDash nao encontrado.'
-    # Tenta endpoint de download direto
     try:
-        r = http_requests.get(
-            f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}/download',
+        # 1. Obter a URL presignada do S3
+        r_url = http_requests.get(
+            f'{_HD_API_BFF}/advance-receivables-agenda/file/{file_id}/download',
             headers=hdrs,
-            timeout=60
+            timeout=30
         )
-        if r.status_code == 401:
+        if r_url.status_code == 401:
             return None, None, 'Token HeroDash expirado.'
-        r.raise_for_status()
+        if r_url.status_code == 422:
+            return None, None, f'Arquivo ainda em processamento ({r_url.json().get("message","")[:100]})'
+        r_url.raise_for_status()
+        resp_json = r_url.json()
+        file_url = resp_json.get('fileUrl') or resp_json.get('url') or resp_json.get('download_url')
+        if not file_url:
+            return None, None, f'URL de download não encontrada: {r_url.text[:200]}'
+        
+        # 2. Baixar o CSV da URL S3 (sem Authorization — URL presignada)
+        r_csv = http_requests.get(file_url, timeout=120)
+        r_csv.raise_for_status()
         fname = f'{file_id}.csv'
-        cd = r.headers.get('Content-Disposition', '')
+        cd = r_csv.headers.get('Content-Disposition', '')
         if 'filename=' in cd:
             fname = cd.split('filename=')[-1].strip().strip('"')
-        return r.content, fname, None
+        return r_csv.content, fname, None
     except Exception as e:
         return None, None, str(e)
 
@@ -17409,12 +17449,14 @@ def hd_cotacao_rapida():
     # ----- PASSO 1: Solicitar geração da agenda -----
     cnpj_clean = cnpj_raw.replace('.', '').replace('/', '').replace('-', '')
     if use_raiz:
-        cnpj_clean = cnpj_clean[:8]  # raiz = 8 primeiros dígitos
-
-    payload_hd = {'cnpjs': [cnpj_clean], 'raiz': use_raiz}
+        payload_hd = {'cnpjs': [], 'rootCnpjs': [cnpj_clean[:8]]}
+    else:
+        if len(cnpj_clean) < 14:
+            cnpj_clean = cnpj_clean.zfill(14)
+        payload_hd = {'cnpjs': [cnpj_clean], 'rootCnpjs': []}
     try:
         r1 = http_requests.post(
-            f'{_HD_API_BASE}/mesa-ar/agenda-sellers',
+            f'{_HD_API_BFF}/advance-receivables-agenda',
             json=payload_hd,
             headers=hdrs,
             timeout=20
@@ -17422,16 +17464,18 @@ def hd_cotacao_rapida():
         if r1.status_code == 401:
             return jsonify({'error': 'Token HeroDash expirado. Faça login novamente no plugin HeroDash do Nitro.'}), 401
         if r1.status_code == 404:
-            return jsonify({'error': 'Sem acesso à Mesa AR no HeroDash. O usuário logado precisa ter perfil de operador da Mesa AR. Peça ao operador (Cesar, Deyvis) para fazer login no plugin HeroDash do Nitro nesta máquina.'}), 403
+            return jsonify({'error': 'Sem acesso à Mesa AR no HeroDash. Verifique permissões.'}), 403
         if r1.status_code == 403:
-            return jsonify({'error': 'Sem permissão para gerar agenda no HeroDash. Verifique se o usuário logado tem acesso à Mesa AR.'}), 403
+            return jsonify({'error': 'Sem permissão para gerar agenda no HeroDash.'}), 403
         r1.raise_for_status()
-        file_id = r1.json().get('id') or r1.json().get('file_id')
+        resp_data = r1.json()
+        # A resposta pode ser o objeto da agenda criada ou lista
+        file_id = resp_data.get('fileId') or resp_data.get('id') or resp_data.get('file_id')
+        if not file_id and isinstance(resp_data, list) and len(resp_data) > 0:
+            file_id = resp_data[0].get('fileId')
         if not file_id:
-            # HD pode retornar erro "já em processamento" com o file_id na mensagem
-            msg = r1.json().get('message', '')
             import re as _re
-            m = _re.search(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', msg)
+            m = _re.search(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', r1.text)
             if m:
                 file_id = m.group(0)
             else:
@@ -17439,11 +17483,10 @@ def hd_cotacao_rapida():
     except http_requests.exceptions.RequestException as e:
         return jsonify({'error': f'Erro ao solicitar agenda ao HeroDash: {str(e)}'}), 502
 
-    # ----- PASSO 2: Polling até Finalizado (máx 3 min) -----
+    # ----- PASSO 2: Polling até PROCESSED (máx 3 min) -----
     max_wait = 180
     poll_interval = 8
     elapsed = 0
-    download_url = None
     status_final = 'processando'
 
     while elapsed < max_wait:
@@ -17451,46 +17494,50 @@ def hd_cotacao_rapida():
         elapsed += poll_interval
         try:
             rs = http_requests.get(
-                f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}',
+                f'{_HD_API_BFF}/advance-receivables-agenda',
+                params={'sort': 'DESC', 'page': 1, 'pageSize': 20},
                 headers=hdrs,
                 timeout=15
             )
-            if rs.status_code in (404, 401):
+            if rs.status_code in (401,):
                 break
             rs.raise_for_status()
             rs_data = rs.json()
-            status_final = (rs_data.get('status') or '').lower()
-            download_url = rs_data.get('download_url') or rs_data.get('url')
-            if 'finaliz' in status_final or 'complet' in status_final:
+            items = rs_data.get('data', rs_data) if isinstance(rs_data, dict) else rs_data
+            for item in (items if isinstance(items, list) else []):
+                if item.get('fileId') == file_id:
+                    status_final = (item.get('status') or '').lower()
+                    break
+            if 'processed' == status_final or 'finaliz' in status_final or 'complet' in status_final:
                 break
             if 'erro' in status_final or 'fail' in status_final:
                 return jsonify({'error': f'Agenda falhou no HeroDash: {status_final}'}), 502
         except Exception:
-            pass  # tenta de novo no próximo ciclo
+            pass
 
-    if 'finaliz' not in status_final and 'complet' not in status_final:
+    if 'processed' != status_final and 'finaliz' not in status_final and 'complet' not in status_final:
         return jsonify({'error': f'Agenda ainda não finalizou após {max_wait}s (status: {status_final}). Tente novamente em instantes.', 'file_id': file_id}), 202
 
-    # ----- PASSO 3: Baixar o CSV -----
+    # ----- PASSO 3: Baixar o CSV (URL presignada S3) -----
     csv_content = None
     csv_filename = f'{file_id}.csv'
-    # Tenta endpoint de download
-    for dl_url in [
-        f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}/download',
-        download_url
-    ]:
-        if not dl_url:
-            continue
-        try:
-            rd = http_requests.get(dl_url, headers=hdrs, timeout=60)
-            if rd.status_code == 200 and rd.content:
-                csv_content = rd.content
-                cd = rd.headers.get('Content-Disposition', '')
-                if 'filename=' in cd:
-                    csv_filename = cd.split('filename=')[-1].strip().strip('"')
-                break
-        except Exception:
-            pass
+    try:
+        # Obter URL presignada
+        rd_url = http_requests.get(
+            f'{_HD_API_BFF}/advance-receivables-agenda/file/{file_id}/download',
+            headers=hdrs, timeout=30)
+        if rd_url.status_code == 200:
+            file_url = rd_url.json().get('fileUrl') or rd_url.json().get('url')
+            if file_url:
+                # Baixar o CSV da URL S3
+                rd_csv = http_requests.get(file_url, timeout=120)
+                if rd_csv.status_code == 200 and rd_csv.content:
+                    csv_content = rd_csv.content
+                    cd = rd_csv.headers.get('Content-Disposition', '')
+                    if 'filename=' in cd:
+                        csv_filename = cd.split('filename=')[-1].strip().strip('"')
+    except Exception:
+        pass
 
     if not csv_content:
         return jsonify({'error': 'Não foi possível baixar o CSV da agenda. Verifique no HeroDash.', 'file_id': file_id}), 502
@@ -17666,13 +17713,19 @@ def hd_status_agenda(file_id):
         return jsonify({'error': 'requests não instalado'}), 500
     try:
         r = http_requests.get(
-            f'{_HD_API_BASE}/mesa-ar/agenda-sellers/{file_id}',
+            f'{_HD_API_BFF}/advance-receivables-agenda',
+            params={'sort': 'DESC', 'page': 1, 'pageSize': 20},
             headers=hdrs, timeout=15
         )
         if r.status_code == 401:
             return jsonify({'error': 'Token expirado'}), 401
         r.raise_for_status()
-        return jsonify(r.json())
+        data = r.json()
+        items = data.get('data', data) if isinstance(data, dict) else data
+        for item in (items if isinstance(items, list) else []):
+            if item.get('fileId') == file_id:
+                return jsonify(item)
+        return jsonify({'fileId': file_id, 'status': 'nao_encontrado'})
     except Exception as e:
         return jsonify({'error': str(e)}), 502
 
