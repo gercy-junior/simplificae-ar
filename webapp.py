@@ -5905,7 +5905,7 @@ HTML_TEMPLATE = '''
 
 
 
-                    <button onclick="saveEmailConfig()" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;">Salvar</button>
+                    <button onclick="saveEmailConfig()" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;">Salvar e Testar</button>
 
 
 
@@ -5913,7 +5913,7 @@ HTML_TEMPLATE = '''
 
 
 
-                <div id="cfg-email-status" style="margin-top:6px;font-size:12px;"></div>
+                <div id="cfg-email-status" style="margin-top:8px;font-size:13px;min-height:28px;"></div>
 
 
 
@@ -11663,59 +11663,48 @@ function downloadAll() {
 
 
         function saveEmailConfig() {
-
             var user = (document.getElementById('cfg-email-user')||{}).value||'';
-
             var pass = (document.getElementById('cfg-email-pass')||{}).value||'';
-
             var name = (document.getElementById('cfg-email-name')||{}).value||'PicPay AR';
-
-            if (!user||!pass) { alert('Preencha o e-mail e o App Password.'); return; }
-
             var statusEl = document.getElementById('cfg-email-status');
-
-            if (statusEl) statusEl.textContent = 'Salvando...';
-
+            if (!user||!pass) { if(statusEl) statusEl.innerHTML='<span style="color:#C62828;">Preencha o e-mail e o App Password.</span>'; return; }
+            if(statusEl) statusEl.innerHTML='<span style="color:#555;">Salvando e testando conexão...</span>';
+            // 1. Salvar config
             fetch('/setup_email', {
-
-                method: 'POST',
-
-                headers: {'Content-Type': 'application/json'},
-
+                method:'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({smtp_user:user, smtp_pass:pass, display_name:name})
-
             })
-
             .then(function(r){ return r.json(); })
-
             .then(function(d){
-
                 if (d.error) {
-
-                    alert(d.error);
-
-                    if (statusEl) statusEl.textContent = '';
-
-                } else {
-
-                    if (statusEl) statusEl.textContent = 'Configurado: ' + (d.user||user);
-
-                    var pe = document.getElementById('cfg-email-pass');
-
-                    if (pe) pe.value='';
-
+                    if(statusEl) statusEl.innerHTML='<span style="color:#C62828;">&#10060; Erro ao salvar: '+d.error+'</span>';
+                    return;
                 }
-
+                // 2. Testar conexão automaticamente
+                if(statusEl) statusEl.innerHTML='<span style="color:#1565C0;">Testando conexão com o servidor de e-mail...</span>';
+                fetch('/test_smtp')
+                .then(function(r){ return r.json(); })
+                .then(function(t){
+                    var portasOk = (t.connectivity||[]).filter(function(c){ return c.ok; });
+                    var login = t.login || {};
+                    if (login.ok) {
+                        if(statusEl) statusEl.innerHTML='<span style="color:#2E7D32;font-weight:600;">&#10003; Conexão OK — e-mail pronto para envio</span>';
+                        var pe = document.getElementById('cfg-email-pass'); if(pe) pe.value='';
+                    } else if (portasOk.length === 0) {
+                        if(statusEl) statusEl.innerHTML='<span style="color:#C62828;font-weight:600;">&#10060; Rede bloqueada — entre em contato com o suporte TI</span><br>'
+                            +'<span style="font-size:11px;color:#555;">O firewall desta máquina está bloqueando o envio de e-mails (portas 587 e 465).</span>';
+                    } else if (!login.ok) {
+                        var errMsg = (login.error||'').toLowerCase();
+                        var dica = errMsg.indexOf('username') >= 0 || errMsg.indexOf('password') >= 0 || errMsg.indexOf('535') >= 0
+                            ? 'Verifique se o App Password está correto. Gere um novo em myaccount.google.com > Segurança > Senhas de app.'
+                            : 'Não foi possível autenticar. Verifique o e-mail e o App Password.';
+                        if(statusEl) statusEl.innerHTML='<span style="color:#C62828;font-weight:600;">&#10060; Falha na autenticação</span><br>'
+                            +'<span style="font-size:11px;color:#555;">'+dica+'</span>';
+                    }
+                })
+                .catch(function(){ if(statusEl) statusEl.innerHTML='<span style="color:#C62828;">Não foi possível testar a conexão.</span>'; });
             })
-
-            .catch(function(e){
-
-                alert('Erro ao salvar: ' + e);
-
-                if (statusEl) statusEl.textContent = '';
-
-            });
-
+            .catch(function(e){ if(statusEl) statusEl.innerHTML='<span style="color:#C62828;">Erro: '+e+'</span>'; });
         }
 
 
@@ -17873,7 +17862,19 @@ def send_email_route():
     # Fix: WinError 10013 em máquinas com porta 587 bloqueada pelo firewall corporativo
     _smtp_err = _smtp_send(cfg, msg, to_emails_list)
     if _smtp_err:
-        return jsonify({'error': 'Falha ao enviar: {}'.format(_smtp_err)}), 500
+        # Traduzir erro tecnico para mensagem clara para o operador
+        _err_lower = _smtp_err.lower()
+        if '10013' in _smtp_err or 'permission' in _err_lower or 'proibida' in _err_lower:
+            _msg_erro = 'Rede bloqueada: o firewall desta m\u00e1quina n\u00e3o permite envio de e-mails. Entre em contato com o suporte TI.'
+        elif 'username' in _err_lower or 'password' in _err_lower or '535' in _smtp_err:
+            _msg_erro = 'Senha incorreta: verifique o App Password. Gere um novo em myaccount.google.com > Seguran\u00e7a > Senhas de app.'
+        elif 'timed out' in _err_lower or 'timeout' in _err_lower:
+            _msg_erro = 'Tempo esgotado ao conectar ao servidor de e-mail. Verifique a conex\u00e3o de rede.'
+        elif 'less secure' in _err_lower or 'application' in _err_lower:
+            _msg_erro = 'Conta Gmail n\u00e3o permite login por aplicativos. Use um App Password gerado em myaccount.google.com.'
+        else:
+            _msg_erro = 'Falha ao enviar e-mail. Clique em Salvar e Testar na se\u00e7\u00e3o de configura\u00e7\u00e3o para diagnosticar.'
+        return jsonify({'error': _msg_erro}), 500
     status_e = 'enviado'
     error_e  = None
 
