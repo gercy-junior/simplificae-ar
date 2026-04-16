@@ -5914,12 +5914,7 @@ HTML_TEMPLATE = '''
 
 
                 <div id="cfg-email-status" style="margin-top:8px;font-size:13px;min-height:28px;"></div>
-                <div id="gmail-auth-section" style="margin-top:10px;padding:10px 12px;background:#E3F2FD;border-radius:6px;border:1px solid #90CAF9;display:none;">
-                    <div style="font-size:12px;color:#1565C0;font-weight:600;margin-bottom:6px;">&#9888; Rede bloqueada — use Gmail via HTTPS</div>
-                    <div id="gmail-status-badge" style="font-size:12px;color:#555;margin-bottom:8px;">Verificando...</div>
-                    <button onclick="gmailAutorizar()" id="btn-gmail-auth" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;background:#1a73e8;color:white;border:none;">Autorizar Gmail</button>
-                    <button onclick="gmailRevogar()" id="btn-gmail-revoke" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;display:none;margin-left:6px;">Remover acesso</button>
-                </div>
+                
 
 
 
@@ -11697,8 +11692,8 @@ function downloadAll() {
                         if(statusEl) statusEl.innerHTML='<span style="color:#2E7D32;font-weight:600;">&#10003; Conexão OK — e-mail pronto para envio</span>';
                         var pe = document.getElementById('cfg-email-pass'); if(pe) pe.value='';
                     } else if (portasOk.length === 0) {
-                        if(statusEl) statusEl.innerHTML='<span style="color:#E65100;font-weight:600;">&#9888; Portas SMTP bloqueadas — usando Gmail via HTTPS</span>';
-                        _gmailShowSection();
+                        if(statusEl) statusEl.innerHTML='<span style="color:#C62828;font-weight:600;">&#10060; Rede bloqueada — entre em contato com o suporte TI</span><br>'
+                            +'<span style="font-size:11px;color:#555;">O firewall desta m\u00e1quina est\u00e1 bloqueando o envio de e-mails (portas 587 e 465). Fale com o TI para liberar ou use outro dispositivo.</span>';
                     } else if (!login.ok) {
                         var errMsg = (login.error||'').toLowerCase();
                         var dica = errMsg.indexOf('username') >= 0 || errMsg.indexOf('password') >= 0 || errMsg.indexOf('535') >= 0
@@ -11714,51 +11709,6 @@ function downloadAll() {
         }
 
 
-        // ── Gmail OAuth2 ──────────────────────────────────────────────
-        function _gmailCheckStatus() {
-            fetch('/gmail/status').then(function(r){ return r.json(); }).then(function(d){
-                var sect = document.getElementById('gmail-auth-section');
-                var badge = document.getElementById('gmail-status-badge');
-                var btnAuth = document.getElementById('btn-gmail-auth');
-                var btnRev = document.getElementById('btn-gmail-revoke');
-                if (!sect) return;
-                if (d.authorized && d.valid) {
-                    badge.innerHTML = '<span style="color:#2E7D32;font-weight:600;">&#10003; Autorizado: ' + d.email + '</span>';
-                    if (btnAuth) btnAuth.style.display = 'none';
-                    if (btnRev) btnRev.style.display = 'inline-block';
-                } else {
-                    badge.innerHTML = '<span style="color:#555;">Não autorizado — clique no botão abaixo</span>';
-                    if (btnAuth) btnAuth.style.display = 'inline-block';
-                    if (btnRev) btnRev.style.display = 'none';
-                }
-            }).catch(function(){});
-        }
-
-        function _gmailShowSection() {
-            var sect = document.getElementById('gmail-auth-section');
-            if (sect) { sect.style.display = 'block'; _gmailCheckStatus(); }
-        }
-
-        function gmailAutorizar() {
-            window.open('/gmail/auth', '_blank', 'width=500,height=650');
-            var badge = document.getElementById('gmail-status-badge');
-            if (badge) badge.innerHTML = 'Aguardando autorização... <button onclick="_gmailCheckStatus()" style="background:#1a73e8;color:white;border:none;border-radius:4px;padding:2px 10px;font-size:11px;cursor:pointer;margin-left:8px;">Já autorizei</button>';
-        }
-
-        function gmailRevogar() {
-            if (!confirm('Remover acesso ao Gmail? O envio de e-mail voltará a usar SMTP.')) return;
-            fetch('/gmail/revoke', {method:'POST'}).then(function(){ _gmailCheckStatus(); });
-        }
-
-        // Mostrar seção Gmail se SMTP estiver bloqueado
-        (function(){
-            fetch('/test_smtp').then(function(r){ return r.json(); }).then(function(t){
-                var portasOk = (t.connectivity||[]).filter(function(c){ return c.ok && (c.port===587||c.port===465); });
-                if (portasOk.length === 0) { _gmailShowSection(); }
-                else { _gmailCheckStatus(); }  // mostrar se ja tiver token
-            }).catch(function(){});
-        })();
-        // ── Fim Gmail OAuth2 ──────────────────────────────────────────
 
 
 
