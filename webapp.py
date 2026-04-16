@@ -17664,7 +17664,7 @@ def test_smtp_route():
     cfg = load_email_config()
     host = cfg.get('smtp_host', 'smtp.gmail.com')
     results = []
-    for port in [587, 465, 25]:
+    for port in [587, 465, 25, 443, 80]:
         try:
             s = _sock.create_connection((host, port), timeout=5)
             s.close()
