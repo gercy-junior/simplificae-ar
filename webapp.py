@@ -65,7 +65,7 @@ from collections import OrderedDict, defaultdict
 
 
 
-from flask import Flask, request, render_template_string, send_file, jsonify, session
+from flask import Flask, request, render_template_string, send_file, jsonify, session, redirect
 
 
 
@@ -5914,6 +5914,12 @@ HTML_TEMPLATE = '''
 
 
                 <div id="cfg-email-status" style="margin-top:8px;font-size:13px;min-height:28px;"></div>
+                <div id="gmail-auth-section" style="margin-top:10px;padding:10px 12px;background:#E3F2FD;border-radius:6px;border:1px solid #90CAF9;display:none;">
+                    <div style="font-size:12px;color:#1565C0;font-weight:600;margin-bottom:6px;">&#9888; Rede bloqueada — use Gmail via HTTPS</div>
+                    <div id="gmail-status-badge" style="font-size:12px;color:#555;margin-bottom:8px;">Verificando...</div>
+                    <button onclick="gmailAutorizar()" id="btn-gmail-auth" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;background:#1a73e8;color:white;border:none;">Autorizar Gmail</button>
+                    <button onclick="gmailRevogar()" id="btn-gmail-revoke" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;display:none;margin-left:6px;">Remover acesso</button>
+                </div>
 
 
 
@@ -11691,8 +11697,8 @@ function downloadAll() {
                         if(statusEl) statusEl.innerHTML='<span style="color:#2E7D32;font-weight:600;">&#10003; Conexão OK — e-mail pronto para envio</span>';
                         var pe = document.getElementById('cfg-email-pass'); if(pe) pe.value='';
                     } else if (portasOk.length === 0) {
-                        if(statusEl) statusEl.innerHTML='<span style="color:#C62828;font-weight:600;">&#10060; Rede bloqueada — entre em contato com o suporte TI</span><br>'
-                            +'<span style="font-size:11px;color:#555;">O firewall desta máquina está bloqueando o envio de e-mails (portas 587 e 465).</span>';
+                        if(statusEl) statusEl.innerHTML='<span style="color:#E65100;font-weight:600;">&#9888; Portas SMTP bloqueadas — usando Gmail via HTTPS</span>';
+                        _gmailShowSection();
                     } else if (!login.ok) {
                         var errMsg = (login.error||'').toLowerCase();
                         var dica = errMsg.indexOf('username') >= 0 || errMsg.indexOf('password') >= 0 || errMsg.indexOf('535') >= 0
@@ -11706,6 +11712,53 @@ function downloadAll() {
             })
             .catch(function(e){ if(statusEl) statusEl.innerHTML='<span style="color:#C62828;">Erro: '+e+'</span>'; });
         }
+
+
+        // ── Gmail OAuth2 ──────────────────────────────────────────────
+        function _gmailCheckStatus() {
+            fetch('/gmail/status').then(function(r){ return r.json(); }).then(function(d){
+                var sect = document.getElementById('gmail-auth-section');
+                var badge = document.getElementById('gmail-status-badge');
+                var btnAuth = document.getElementById('btn-gmail-auth');
+                var btnRev = document.getElementById('btn-gmail-revoke');
+                if (!sect) return;
+                if (d.authorized && d.valid) {
+                    badge.innerHTML = '<span style="color:#2E7D32;font-weight:600;">&#10003; Autorizado: ' + d.email + '</span>';
+                    if (btnAuth) btnAuth.style.display = 'none';
+                    if (btnRev) btnRev.style.display = 'inline-block';
+                } else {
+                    badge.innerHTML = '<span style="color:#555;">Não autorizado — clique no botão abaixo</span>';
+                    if (btnAuth) btnAuth.style.display = 'inline-block';
+                    if (btnRev) btnRev.style.display = 'none';
+                }
+            }).catch(function(){});
+        }
+
+        function _gmailShowSection() {
+            var sect = document.getElementById('gmail-auth-section');
+            if (sect) { sect.style.display = 'block'; _gmailCheckStatus(); }
+        }
+
+        function gmailAutorizar() {
+            window.open('/gmail/auth', '_blank', 'width=500,height=650');
+            var badge = document.getElementById('gmail-status-badge');
+            if (badge) badge.innerHTML = 'Aguardando autorização... <button onclick="_gmailCheckStatus()" style="background:#1a73e8;color:white;border:none;border-radius:4px;padding:2px 10px;font-size:11px;cursor:pointer;margin-left:8px;">Já autorizei</button>';
+        }
+
+        function gmailRevogar() {
+            if (!confirm('Remover acesso ao Gmail? O envio de e-mail voltará a usar SMTP.')) return;
+            fetch('/gmail/revoke', {method:'POST'}).then(function(){ _gmailCheckStatus(); });
+        }
+
+        // Mostrar seção Gmail se SMTP estiver bloqueado
+        (function(){
+            fetch('/test_smtp').then(function(r){ return r.json(); }).then(function(t){
+                var portasOk = (t.connectivity||[]).filter(function(c){ return c.ok && (c.port===587||c.port===465); });
+                if (portasOk.length === 0) { _gmailShowSection(); }
+                else { _gmailCheckStatus(); }  // mostrar se ja tiver token
+            }).catch(function(){});
+        })();
+        // ── Fim Gmail OAuth2 ──────────────────────────────────────────
 
 
 
@@ -17444,11 +17497,84 @@ def _warmup_databricks():
 
 # =========================================================================
 
-EMAIL_CONFIG_FILE = os.path.join(BASE_DIR, 'email_config.json')
+EMAIL_CONFIG_FILE = os.path.join(_DATA_DIR, 'email_config.json')
 
-EMAIL_HISTORY_FILE = os.path.join(BASE_DIR, 'email_history.json')
+EMAIL_HISTORY_FILE = os.path.join(_DATA_DIR, 'email_history.json')
 
-EMAIL_DEST_FILE = os.path.join(BASE_DIR, 'email_destinatarios.json')
+EMAIL_DEST_FILE = os.path.join(_DATA_DIR, 'email_destinatarios.json')
+
+
+# Gmail OAuth2 via HTTPS (fallback quando SMTP bloqueado por firewall)
+GMAIL_TOKEN_FILE = os.path.join(_DATA_DIR, 'gmail_token.json')
+GMAIL_SCOPES     = ['https://www.googleapis.com/auth/gmail.send']
+_GMAIL_CLIENT_ID     = os.environ.get('GMAIL_CLIENT_ID', '')
+_GMAIL_CLIENT_SECRET = os.environ.get('GMAIL_CLIENT_SECRET', '')
+_GMAIL_REDIRECT_URI  = 'http://localhost:5000/gmail/callback'
+
+def _gmail_token_load():
+    if not os.path.exists(GMAIL_TOKEN_FILE):
+        return None
+    try:
+        with open(GMAIL_TOKEN_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+def _gmail_token_save(data):
+    with open(GMAIL_TOKEN_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def _gmail_refresh_token(token_data):
+    try:
+        import urllib.request as _ur, urllib.parse as _up
+        body = _up.urlencode({
+            'client_id':     _GMAIL_CLIENT_ID,
+            'client_secret': _GMAIL_CLIENT_SECRET,
+            'refresh_token': token_data.get('refresh_token', ''),
+            'grant_type':    'refresh_token',
+        }).encode()
+        req = _ur.Request('https://oauth2.googleapis.com/token', data=body,
+                          headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        resp = json.loads(_ur.urlopen(req, timeout=15).read())
+        if 'access_token' in resp:
+            token_data['access_token'] = resp['access_token']
+            if 'refresh_token' in resp:
+                token_data['refresh_token'] = resp['refresh_token']
+            _gmail_token_save(token_data)
+            return token_data
+    except Exception:
+        pass
+    return None
+
+def _gmail_send_api(msg_obj):
+    token = _gmail_token_load()
+    if not token:
+        return 'Gmail nao autorizado. Clique em Autorizar Gmail na secao de e-mail.'
+    try:
+        import urllib.request as _ur, base64 as _b64, time as _t
+        exp = token.get('expires_at', 0)
+        if exp and _t.time() > exp - 60:
+            token = _gmail_refresh_token(token)
+            if not token:
+                return 'Sessao Gmail expirada. Clique em Autorizar Gmail novamente.'
+        at = token['access_token']
+        raw = _b64.urlsafe_b64encode(msg_obj.as_bytes()).decode()
+        body = json.dumps({'raw': raw}).encode()
+        req = _ur.Request(
+            'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+            data=body,
+            headers={'Authorization': 'Bearer ' + at, 'Content-Type': 'application/json'},
+            method='POST'
+        )
+        json.loads(_ur.urlopen(req, timeout=20).read())
+        return None
+    except Exception as e:
+        err = str(e)
+        if '401' in err or 'invalid_grant' in err.lower():
+            try: os.remove(GMAIL_TOKEN_FILE)
+            except: pass
+            return 'Sessao Gmail expirada. Clique em Autorizar Gmail novamente.'
+        return 'Erro Gmail API: ' + err
 
 
 
@@ -17489,6 +17615,12 @@ def _smtp_send(cfg, msg_obj, to_list):
         except Exception as e:
             last_err = str(e)
             continue
+    # SMTP falhou em todas as portas — tentar Gmail API via HTTPS/443
+    if _gmail_token_load():
+        gmail_err = _gmail_send_api(msg_obj)
+        if gmail_err is None:
+            return None  # enviado via Gmail API
+        return gmail_err
     return last_err
 
 
@@ -17631,6 +17763,85 @@ def get_email_config():
 
     })
 
+
+
+@app.route('/gmail/status')
+def gmail_status():
+    token = _gmail_token_load()
+    if not token:
+        return jsonify({'authorized': False})
+    email = token.get('email', '')
+    import time as _t
+    exp = token.get('expires_at', 0)
+    valid = not exp or _t.time() < exp
+    return jsonify({'authorized': True, 'email': email, 'valid': valid})
+
+@app.route('/gmail/auth')
+def gmail_auth():
+    import urllib.parse as _up
+    params = {
+        'client_id':     _GMAIL_CLIENT_ID,
+        'redirect_uri':  _GMAIL_REDIRECT_URI,
+        'response_type': 'code',
+        'scope':         ' '.join(GMAIL_SCOPES),
+        'access_type':   'offline',
+        'prompt':        'consent',
+    }
+    url = 'https://accounts.google.com/o/oauth2/v2/auth?' + _up.urlencode(params)
+    return redirect(url)
+
+@app.route('/gmail/callback')
+def gmail_callback():
+    code = request.args.get('code')
+    error = request.args.get('error')
+    if error or not code:
+        return '<h3>Autorização cancelada.</h3><p>Feche esta aba e tente novamente.</p>'
+    try:
+        import urllib.request as _ur, urllib.parse as _up, time as _t
+        body = _up.urlencode({
+            'code':          code,
+            'client_id':     _GMAIL_CLIENT_ID,
+            'client_secret': _GMAIL_CLIENT_SECRET,
+            'redirect_uri':  _GMAIL_REDIRECT_URI,
+            'grant_type':    'authorization_code',
+        }).encode()
+        req = _ur.Request('https://oauth2.googleapis.com/token', data=body,
+                          headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        resp = json.loads(_ur.urlopen(req, timeout=15).read())
+        if 'access_token' not in resp:
+            return '<h3>Erro na autorização.</h3><p>' + str(resp) + '</p>'
+        # Buscar e-mail do usuário
+        req2 = _ur.Request('https://www.googleapis.com/oauth2/v2/userinfo',
+                           headers={'Authorization': 'Bearer ' + resp['access_token']})
+        user_info = json.loads(_ur.urlopen(req2, timeout=10).read())
+        expires_at = _t.time() + int(resp.get('expires_in', 3600))
+        token_data = {
+            'access_token':  resp['access_token'],
+            'refresh_token': resp.get('refresh_token', ''),
+            'expires_at':    expires_at,
+            'email':         user_info.get('email', ''),
+        }
+        _gmail_token_save(token_data)
+        email = token_data['email']
+        return (
+            '<html><body style="font-family:Arial;text-align:center;padding:60px;">'
+            '<div style="color:#2E7D32;font-size:48px;">&#10003;</div>'
+            '<h2 style="color:#1B5E20;">Gmail autorizado!</h2>'
+            '<p style="color:#555;">Conta: <strong>' + email + '</strong></p>'
+            '<p style="color:#555;">Pode fechar esta aba e voltar ao SimplificaE.</p>'
+            '</body></html>'
+        )
+    except Exception as e:
+        return '<h3>Erro:</h3><p>' + str(e) + '</p>'
+
+@app.route('/gmail/revoke', methods=['POST'])
+def gmail_revoke():
+    try:
+        if os.path.exists(GMAIL_TOKEN_FILE):
+            os.remove(GMAIL_TOKEN_FILE)
+    except Exception:
+        pass
+    return jsonify({'status': 'ok'})
 
 
 @app.route('/send_email', methods=['POST'])
