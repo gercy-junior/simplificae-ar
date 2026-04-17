@@ -15,6 +15,21 @@
     "session_id": "20260417_110354"
   },
   {
+    "timestamp": "17/04/2026 11:04",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202542113",
+    "tipo": "Completa",
+    "empresas": [
+      "MASH ONLINE COMERCIO DE VESTUARIO LTDA",
+      "SUPERMERCADO TATICO"
+    ],
+    "total_urs": 446,
+    "total_valor": 3511442.2,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "session_id": "20260417_110354"
+  },
+  {
     "timestamp": "17/04/2026 09:50",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
