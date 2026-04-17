@@ -221,6 +221,9 @@ except ImportError:
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# MODO: 'dev' = todas as features | 'prod' = apenas funcionalidades estáveis
+APP_MODO = os.environ.get('MODO', 'prod').lower().strip()
+
 
 
 RAIZES_PATH = os.path.join(BASE_DIR, 'raizes_conhecidas.json')
@@ -5938,6 +5941,7 @@ HTML_TEMPLATE = '''
 
 
 
+        {% if app_modo == 'dev' %}  {# HeroDash + script: apenas em modo dev #}
         <!-- HeroDash: Cotacao Rapida -->
         <div class="card" id="card-hd-flow" style="border-left: 4px solid #1a73e8;">
             <h2 style="color:#1a73e8;">&#x26A1; Cotacao Rapida - HeroDash</h2>
@@ -6133,6 +6137,7 @@ var _hdRowCount=1;
             .catch(function(err){btn.disabled=false;msg.textContent='Erro: '+err.message;});
         }
         </script>
+        {% endif %}{# fim HeroDash dev-only #}
 
         <!-- Step 2: Upload -->
 
@@ -6404,6 +6409,7 @@ var _hdRowCount=1;
 
 
 
+        {% if app_modo == 'dev' %}  {# Calculadora AR: apenas em modo dev #}
         <!-- Step 6: Calculadora AR -->
         <div class="card hidden" id="step-calc-ar" style="border-left:4px solid #1B5E20;">
             <h2>6. Calculadora de Antecipa\u00e7\u00e3o</h2>
@@ -6420,6 +6426,7 @@ var _hdRowCount=1;
             <div id="ar-inputs" style="display:none;"></div>
             <div id="ar-results" style="min-height:40px;overflow-x:auto;"></div>
         </div>
+        {% endif %}
 
         <!-- Step 7: Personalizar -->
         <div class="card hidden" id="step-custom">
@@ -6812,7 +6819,9 @@ var _hdRowCount=1;
 
 
 
+        var _updateDismissed = false;
         function checkForUpdates() {
+            if (_updateDismissed) return;  // operador clicou 'Agora nao' nesta sessao
             fetch('/check_update')
             .then(r => r.json())
             .then(function(data) {
@@ -6839,7 +6848,7 @@ var _hdRowCount=1;
                     + '</span>'
                     + '<div style="display:flex;gap:8px;align-items:center;">'
                     + '<button id="btn-update" onclick="applyUpdate()" style="background:white;color:#1B5E20;border:none;border-radius:6px;padding:6px 18px;font-size:13px;font-weight:bold;cursor:pointer;">&#11015; Atualizar agora</button>'
-                    + '<button onclick="document.getElementById(\"update-banner\").remove();document.body.style.paddingTop=\"\";" style="background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">Agora n&#227;o</button>'
+                    + '<button onclick="document.getElementById(\"update-banner\").remove();document.body.style.paddingTop=\"\";_updateDismissed=true;" style="background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">Agora n&#227;o</button>'
                     + '</div>';
                 document.body.prepend(banner);
                 document.body.style.paddingTop = '52px';
@@ -6872,7 +6881,14 @@ var _hdRowCount=1;
             .then(() => {
                 setTimeout(() => location.reload(), 3000);
             })
-            .catch(() => setTimeout(() => location.reload(), 3000));
+            .catch(() => {
+                // Nao recarregar automaticamente se houver sessao ativa
+                if (typeof sessionId !== 'undefined' && sessionId) {
+                    alert('Reinicio do servidor falhou. Se quiser atualizar, clique em Reiniciar novamente ap\u00f3s concluir a cota\u00e7\u00e3o atual.');
+                } else {
+                    setTimeout(() => location.reload(), 3000);
+                }
+            });
         }
 
         function applyUpdate() {
@@ -6896,7 +6912,9 @@ var _hdRowCount=1;
                         });
                     }, 1000);
                 } else if (data.status === 'ok') {
-                    alert('Atualizado! A página vai recarregar.');
+                    if (typeof sessionId !== 'undefined' && sessionId) {
+                        if (!confirm('Atualiza\u00e7\u00e3o pronta! Voc\u00ea tem uma sess\u00e3o ativa.\u005cnRecarregar vai perder taxas e filtros digitados.\u005cnDeseja continuar?')) return;
+                    }
                     location.reload();
                 } else {
                     alert('Erro: ' + (data.error || data.status || 'desconhecido'));
@@ -8698,7 +8716,7 @@ var _hdRowCount=1;
 
 
 
-                        // Esconder resultados preliminares (gerados sem elegibilidade)
+                        // Manter resultados visiveis — apenas rolar ate o painel de elegibilidade
 
 
 
@@ -8706,7 +8724,7 @@ var _hdRowCount=1;
 
 
 
-                        if (stepResults) stepResults.classList.add('hidden');
+                        // if (stepResults) stepResults.classList.add('hidden'); // REMOVIDO: nao esconder resultados
 
 
 
@@ -8730,7 +8748,7 @@ var _hdRowCount=1;
 
 
 
-                        sellerStatus.innerHTML = '&#9888; <strong>' + sellerData.ineligible_sellers.length + ' seller(s) inelegiveis</strong> &mdash; os arquivos ainda n&atilde;o foram gerados. Confirme abaixo para gerar sem eles (ou inclui-los s&oacute; na cota&ccedil;&atilde;o).';
+                        sellerStatus.innerHTML = '<div style="background:#FFF3E0;border:2px solid #FF9800;border-radius:8px;padding:12px 16px;margin:8px 0;"><strong style="color:#E65100;font-size:14px;">&#9888; A\u00e7\u00e3o necess\u00e1ria: sellers inelegi\u00edveis</strong><br><span style="font-size:13px;color:#555;">Encontrei <strong>' + sellerData.ineligible_sellers.length + ' seller(s) inelegi\u00edveis</strong>. Role a p\u00e1gina para baixo e decida o que fazer com eles antes de gerar os arquivos.</span></div>';
 
 
 
@@ -11824,7 +11842,7 @@ function downloadAll() {
 
 def index():
     from flask import make_response
-    resp = make_response(render_template_string(HTML_TEMPLATE, operadores=OPERADORES, app_version=APP_VERSION))
+    resp = make_response(render_template_string(HTML_TEMPLATE, operadores=OPERADORES, app_version=APP_VERSION, app_modo=APP_MODO))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
     resp.headers['Expires'] = '0'
