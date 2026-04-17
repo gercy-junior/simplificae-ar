@@ -27,6 +27,33 @@
     "session_id": "20260417_114915"
   },
   {
+    "timestamp": "17/04/2026 11:49",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202542113",
+    "tipo": "Completa",
+    "empresas": [
+      "Alcantara Papelaria",
+      "Barra Papelaria Livraria E Brinquedos Ltda",
+      "Campo Papelaria",
+      "E e C Moura",
+      "Edamo Papelaria",
+      "Iguacu Papelaria",
+      "MASH ONLINE COMERCIO DE VESTUARIO LTDA",
+      "MDR Papelaria e Livraria LTDA NI",
+      "Matriz de Meriti",
+      "Mendes Papelaria Livraria e brinquedos Ltda",
+      "SUPERMERCADO TATICO",
+      "Santa Cruz Papelaria",
+      "Taquara Papelaria",
+      "Tid's Papelaria"
+    ],
+    "total_urs": 5162,
+    "total_valor": 11857385.85,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "session_id": "20260417_114915"
+  },
+  {
     "timestamp": "17/04/2026 11:06",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202542113",
