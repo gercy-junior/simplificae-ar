@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "17/04/2026 11:56",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202542113",
+    "tipo": "Completa",
+    "empresas": [
+      "Campo Papelaria",
+      "E e C Moura",
+      "Edamo Papelaria",
+      "Iguacu Papelaria",
+      "MASH ONLINE COMERCIO DE VESTUARIO LTDA",
+      "Matriz de Meriti",
+      "SUPERMERCADO TATICO"
+    ],
+    "total_urs": 2334,
+    "total_valor": 6168433.78,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "session_id": "20260417_115647"
+  },
+  {
     "timestamp": "17/04/2026 11:49",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202542113",
