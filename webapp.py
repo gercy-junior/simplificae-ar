@@ -2646,7 +2646,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-                         f'=MAX(0,G{rn}-TODAY())', 0,
+                         pdc, 0,  # Prazo DC fixo na data da cotacao (nao muda ao reabrir)
 
 
 
@@ -17691,22 +17691,29 @@ def test_smtp_route():
             results.append({'port': port, 'ok': False, 'error': str(e)})
     # Testar login se credenciais estiverem configuradas
     login_result = None
+    login_result = None
     if cfg.get('smtp_user') and cfg.get('smtp_pass'):
-        port_ok = next((r['port'] for r in results if r['ok']), None)
-        if port_ok:
+        # Testar login em TODAS as portas acessiveis ate encontrar uma que funcione
+        _login_attempts = []
+        for _r in results:
+            if not _r['ok']: continue
+            _p = _r['port']
             try:
-                if port_ok == 465:
-                    with smtplib.SMTP_SSL(host, port_ok, timeout=10) as srv:
+                if _p == 465:
+                    with smtplib.SMTP_SSL(host, _p, timeout=15) as srv:
                         srv.login(cfg['smtp_user'], cfg['smtp_pass'])
                 else:
-                    with smtplib.SMTP(host, port_ok, timeout=10) as srv:
+                    with smtplib.SMTP(host, _p, timeout=15) as srv:
                         srv.ehlo(); srv.starttls(); srv.ehlo()
                         srv.login(cfg['smtp_user'], cfg['smtp_pass'])
-                login_result = {'ok': True, 'port': port_ok, 'user': cfg['smtp_user'][:15]+'...'}
-            except Exception as e:
-                login_result = {'ok': False, 'port': port_ok, 'error': str(e)}
-        else:
-            login_result = {'ok': False, 'error': 'Nenhuma porta acessivel'}
+                login_result = {'ok': True, 'port': _p, 'user': cfg['smtp_user'][:15]+'...'}
+                break  # login ok — parar
+            except Exception as _e:
+                _login_attempts.append({'port': _p, 'error': str(_e)})
+                continue  # tentar proxima porta
+        if login_result is None:
+            _best_err = _login_attempts[-1]['error'] if _login_attempts else 'Nenhuma porta acessivel'
+            login_result = {'ok': False, 'error': _best_err, 'attempts': _login_attempts}
     return jsonify({
         'host': host,
         'connectivity': results,
