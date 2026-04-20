@@ -1420,7 +1420,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
 
 
-    today = datetime.now()
+    today = datetime.now().date()  # .date() evita erro de hora na subtracao
 
     taxa_diaria = (1 + taxa_nominal) ** (1 / 30) - 1
 
@@ -1488,7 +1488,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
         vb = r.get('disponivel', 0)
 
-        pdc = max(0, (dl - today).days) if dl else 30
+        pdc = max(0, ((dl.date() if hasattr(dl,'date') else dl) - today).days) if dl else 30
 
         dp = (1 + taxa_diaria) ** pdc - 1
 
@@ -2000,7 +2000,7 @@ def generate_cotacao_xw(records, empresa_nome, taxa_nominal, di_periodo,
 
             if dl and v > 0:
 
-                p = max(0, (dl - today).days)
+                p = max(0, ((dl.date() if hasattr(dl,'date') else dl) - today).days)
 
                 wp2 += p * v
 
@@ -2188,7 +2188,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-    today = datetime.now()
+    today = datetime.now().date()  # .date() evita erro de hora na subtracao
 
 
 
@@ -2298,7 +2298,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-    wp = sum(max(0, (parse_date(r.get('data_liquidacao', '')) - today).days) * r.get('disponivel', 0)
+    wp = sum(max(0, ((lambda d: d.date() if hasattr(d,'date') else d)(parse_date(r.get('data_liquidacao', ''))) - today).days) * r.get('disponivel', 0)
 
 
 
@@ -2558,7 +2558,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-        pdc = max(0, (dl - today).days) if dl else 30
+        pdc = max(0, ((dl.date() if hasattr(dl,'date') else dl) - today).days) if dl else 30
 
 
 
@@ -3150,7 +3150,7 @@ def generate_cotacao(records, empresa_nome, taxa_nominal, di_periodo, seller_map
 
 
 
-                p = max(0, (dl - today).days)
+                p = max(0, ((dl.date() if hasattr(dl,'date') else dl) - today).days)
 
 
 
