@@ -1,5 +1,21 @@
 [
   {
+    "timestamp": "20/04/2026 12:00",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202542113",
+    "tipo": "Completa",
+    "empresas": [
+      "Kalunga",
+      "Opay",
+      "Supermercados Guanabara"
+    ],
+    "total_urs": 34975,
+    "total_valor": 307735661.67,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "session_id": "20260420_115944"
+  },
+  {
     "timestamp": "20/04/2026 09:47",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202531173",
