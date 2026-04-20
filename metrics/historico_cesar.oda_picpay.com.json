@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "20/04/2026 09:47",
+    "operador": "cesar.oda@picpay.com",
+    "usuario_maquina": "PPW-A202531173",
+    "tipo": "Personalizada - SAVEGNAGO",
+    "empresas": [
+      "SAVEGNAGO"
+    ],
+    "total_urs": 322,
+    "total_valor": 10077194.26,
+    "taxa": 0,
+    "di_periodo": 0.1465,
+    "filtros": {
+      "valor_alvo": 10000000,
+      "adquirente": "Cielo,Getnet",
+      "arranjo": "ECC,MCC,VCC",
+      "periodo": "24/04/2026 a 27/04/2026"
+    },
+    "session_id": "20260420_092105"
+  },
+  {
     "timestamp": "17/04/2026 12:07",
     "operador": "cesar.oda@picpay.com",
     "usuario_maquina": "PPW-A202542113",
