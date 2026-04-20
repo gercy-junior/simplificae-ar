@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "20/04/2026 10:23",
+    "operador": "deyvis.balconi@picpay.com",
+    "usuario_maquina": "PPW-A202514800",
+    "tipo": "Personalizada - CENCOSUD",
+    "empresas": [
+      "CENCOSUD"
+    ],
+    "total_urs": 32,
+    "total_valor": 19849.2,
+    "taxa": 1.25,
+    "di_periodo": 0.1465,
+    "filtros": {
+      "valor_alvo": 5000000,
+      "adquirente": "Cielo,Rede",
+      "arranjo": "ACC,ECC,MCC,VCC",
+      "periodo": "24/04/2026"
+    },
+    "session_id": "20260420_091803"
+  },
+  {
     "timestamp": "20/04/2026 09:26",
     "operador": "deyvis.balconi@picpay.com",
     "usuario_maquina": "PPW-A202514800",
